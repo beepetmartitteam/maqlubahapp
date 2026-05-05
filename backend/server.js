@@ -632,7 +632,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 5555;
 
 // Sync database and start server
 sequelize.sync({ alter: process.env.NODE_ENV === 'development' }).then(() => {
