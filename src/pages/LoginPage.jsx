@@ -61,8 +61,16 @@ const LoginPage = () => {
       navigate('/customer');
     } catch (error) {
       console.error('Login error:', error.message);
-      // Handle error display (you might want to add state for error messages)
-      alert(error.message);
+      
+      // Better error messages for mobile
+      let errorMessage = error.message;
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error. Please check your connection and try again.';
+      } else if (error.message.includes('CORS')) {
+        errorMessage = 'Connection blocked. Please contact support.';
+      }
+      
+      alert(errorMessage);
     }
   }
 
