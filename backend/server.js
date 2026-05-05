@@ -24,11 +24,14 @@ const app = express();
 app.use(helmet());
 app.use(cors({
     origin: function (origin, callback) {
+        console.log('CORS Origin:', origin);
+
         // Allow requests with no origin (like mobile apps or curl)
         if (!origin) return callback(null, true);
         
         // Allowed origins for both development and production
         const allowedOrigins = [
+            'https://gemilang.beeasy.id', // ✅ INI YANG PENTING
             'https://gemilang-api.beeasy.id',
             'http://localhost:3000', 
             'http://localhost:5173',
