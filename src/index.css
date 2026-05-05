@@ -1,0 +1,168 @@
+:root {
+  /* Colors */
+  --brand-01: #1f0d26;
+  --brand-02: #3e1a4d;
+  --brand-03: #5d2673;
+  --brand-04: #7c3399;
+  --brand-05: #9b40bf;
+  --brand-06: #af66cc;
+  --brand-07: #c38cd9;
+  --brand-08: #d7b2e5;
+  --brand-09: #ebd9f2;
+  --brand-10: #f5ecf9;
+  --monochromatic-01: #1a1a1a;
+  --monochromatic-02: #333333;
+  --monochromatic-03: #4d4d4d;
+  --monochromatic-04: #666666;
+  --monochromatic-05: #808080;
+  --monochromatic-06: #999999;
+  --monochromatic-07: #b3b3b3;
+  --monochromatic-08: #cccccc;
+  --monochromatic-09: #f2f2f2;
+  --monochromatic-10: #ffffff;
+  --font-dark: linear-gradient(
+      to left,
+      rgba(255, 255, 255, 0),
+      rgba(255, 255, 255, 0)
+    ),
+    linear-gradient(to left, #0f0f0f, #0f0f0f);
+  --font-mid: linear-gradient(
+      to left,
+      rgba(255, 255, 255, 0.4),
+      rgba(255, 255, 255, 0.4)
+    ),
+    linear-gradient(to left, #0f0f0f, #0f0f0f);
+  --font-light: linear-gradient(
+      to left,
+      rgba(255, 255, 255, 0.7),
+      rgba(255, 255, 255, 0.7)
+    ),
+    linear-gradient(to left, #0f0f0f, #0f0f0f);
+  --font-white: linear-gradient(to left, #ffffff, #ffffff),
+    linear-gradient(to left, #0f0f0f, #0f0f0f);
+  --validation-neutral: #4b92d4;
+  --validation-success: #4dcfc0;
+  --validation-warning: #eea63a;
+  --validation-error: #e52b67;
+  --gradient-inward: linear-gradient(
+    180deg,
+    rgba(51, 51, 51, 0.7) 0%,
+    rgba(51, 51, 51, 0) 45.30458152294159%,
+    rgba(51, 51, 51, 1) 100%
+  );
+  --gradient-down: linear-gradient(
+    180deg,
+    rgba(26, 26, 26, 0.77) 0%,
+    rgba(26, 26, 26, 0) 100%
+  );
+  --gradient-up: linear-gradient(
+    180deg,
+    rgba(26, 26, 26, 0) 0%,
+    rgba(26, 26, 26, 0.77) 100%
+  );
+  --gradient-brand: linear-gradient(
+    44.46deg,
+    rgba(155, 64, 191, 1) 0%,
+    rgba(243, 68, 247, 1) 100%
+  );
+  --blur-light: rgba(255, 255, 255, 0.8);
+  --blur-dark: rgba(51, 51, 51, 0.8);
+  --blur-brand: rgba(155, 64, 191, 0.8);
+  --angular-gradient-brand: conic-gradient(
+    from 44.46deg at 50% 50%,
+    rgba(243, 68, 247, 0) 12.465229630470276%,
+    rgba(243, 68, 247, 1) 50.76780319213867%,
+    rgba(155, 64, 191, 1) 87.99053430557251%
+  );
+  --angular-gradient-dark: conic-gradient(
+    from 44.46deg at 50% 50%,
+    rgba(51, 51, 51, 0) 12.465229630470276%,
+    rgba(51, 51, 51, 1) 87.99053430557251%
+  );
+  --angular-gradient-light: conic-gradient(
+    from 44.46deg at 50% 50%,
+    rgba(255, 255, 255, 1) 13.50695788860321%,
+    rgba(255, 255, 255, 0) 89.55312967300415%
+  );
+  --overlay-25: rgba(26, 26, 26, 0.25);
+  --overlay-75: rgba(26, 26, 26, 0.75);
+
+  /* Fonts */
+  --header-1-font-family: "GothicA1-SemiBold", sans-serif;
+  --header-1-font-size: 26px;
+  --header-1-line-height: 32px;
+  --header-1-font-weight: 600;
+  --header-1-font-style: normal;
+  --header-2-font-family: "GothicA1-SemiBold", sans-serif;
+  --header-2-font-size: 22px;
+  --header-2-line-height: normal;
+  --header-2-font-weight: 600;
+  --header-2-font-style: normal;
+  --header-3-font-family: "GothicA1-SemiBold", sans-serif;
+  --header-3-font-size: 20px;
+  --header-3-line-height: 24px;
+  --header-3-font-weight: 600;
+  --header-3-font-style: normal;
+  --header-4-font-family: "GothicA1-SemiBold", sans-serif;
+  --header-4-font-size: 19px;
+  --header-4-line-height: 24px;
+  --header-4-font-weight: 600;
+  --header-4-font-style: normal;
+  --header-5-font-family: "GothicA1-SemiBold", sans-serif;
+  --header-5-font-size: 18px;
+  --header-5-line-height: 24px;
+  --header-5-font-weight: 600;
+  --header-5-font-style: normal;
+  --header-6-font-family: "GothicA1-SemiBold", sans-serif;
+  --header-6-font-size: 16px;
+  --header-6-line-height: 24px;
+  --header-6-font-weight: 600;
+  --header-6-font-style: normal;
+  --paragraph-regular-large-font-family: "GothicA1-Regular", sans-serif;
+  --paragraph-regular-large-font-size: 16px;
+  --paragraph-regular-large-line-height: 24px;
+  --paragraph-regular-large-font-weight: 400;
+  --paragraph-regular-large-font-style: normal;
+  --paragraph-regular-small-font-family: "GothicA1-Regular", sans-serif;
+  --paragraph-regular-small-font-size: 14px;
+  --paragraph-regular-small-line-height: 20px;
+  --paragraph-regular-small-font-weight: 400;
+  --paragraph-regular-small-font-style: normal;
+  --paragraph-medium-large-font-family: "GothicA1-Medium", sans-serif;
+  --paragraph-medium-large-font-size: 16px;
+  --paragraph-medium-large-line-height: 24px;
+  --paragraph-medium-large-font-weight: 500;
+  --paragraph-medium-large-font-style: normal;
+  --paragraph-medium-small-font-family: "GothicA1-Medium", sans-serif;
+  --paragraph-medium-small-font-size: 14px;
+  --paragraph-medium-small-line-height: 20px;
+  --paragraph-medium-small-font-weight: 500;
+  --paragraph-medium-small-font-style: normal;
+
+  /* Effects */
+  --border-bottom-box-shadow: inset 0px -1px 0px 0px rgba(122, 122, 122, 0.15);
+  --border-top-box-shadow: inset 0px 1px 0px 0px rgba(122, 122, 122, 0.15);
+  --shadow-outer-default-box-shadow: 0px 0px 24px 0px rgba(180, 188, 203, 0.24);
+  --shadow-outer-small-box-shadow: 0px 0px 8px 0px rgba(180, 188, 203, 0.16);
+  --shadow-outer-tiny-box-shadow: 0.5px 0.5px 2px 0px rgba(26, 26, 26, 0.32);
+  --shadow-inner-default-box-shadow: inset 0px 2px 8px 0px
+    rgba(180, 188, 203, 0.4);
+  --shadow-inner-small-box-shadow: inset 0px 1px 4px 0px
+    rgba(180, 188, 203, 0.4);
+  --blur-24px-backdrop-filter: blur(12px);
+  --blur-4px-backdrop-filter: blur(2px);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: var(--monochromatic-10);
+}

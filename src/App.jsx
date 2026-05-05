@@ -1,0 +1,41 @@
+import React from 'react'
+import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import CustomerPageList from './pages/CustomerPageList'
+import CustomerProfilePage from './pages/CustomerProfilePage'
+import CustomerNotesPage from './pages/CustomerNotesPage'
+console.log('CustomerNotesPage imported:', CustomerNotesPage)
+import CustomerAddPage from './pages/CustomerAddPage'
+import CustomerEditPage from './pages/CustomerEditPage'
+import CustomerAddNotePage from './pages/CustomerAddNotePage'
+import LoginPage from './pages/LoginPage'
+
+import './App.css'
+
+function App() {
+  return (
+    <BrowserRouter>
+      <div className="App">
+        <Routes>
+          <Route path="/" element={<LoginPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/customer" element={<CustomerPageList />} />
+          <Route path="/customer-profile/:id" element={<CustomerProfilePage />} />
+          <Route path="/customer-notes/:id" element={<CustomerNotesPage />} />
+          <Route path="/customer-add" element={<CustomerAddPage />} />
+          <Route path="/customer-edit/:id" element={<CustomerEditPage />} />
+          <Route path="/customer-add-note/:id" element={<CustomerAddNotePage />} />
+          <Route path="*" element={<div>Route not found</div>} />
+        </Routes>
+      </div>
+    </BrowserRouter>
+  )
+}
+
+// Debug component to show current location
+function LocationDebugger() {
+  const location = useLocation()
+  console.log('Current location:', location.pathname)
+  return null
+}
+
+export default App
