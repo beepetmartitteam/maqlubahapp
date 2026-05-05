@@ -659,11 +659,22 @@ app.use((err, req, res, next) => {
 const PORT = process.env.PORT || 5555;
 
 // Sync database and start server
-sequelize.sync({ alter: process.env.NODE_ENV === 'development' }).then(() => {
+sequelize.sync({ 
+    force: false,
+    alter: false,
+    logging: console.log
+}).then(() => {
     app.listen(PORT, () => {
         console.log(`Server running on port ${PORT}`);
         console.log(`Environment: ${process.env.NODE_ENV}`);
     });
 }).catch(error => {
     console.error('Unable to sync database:', error);
+    console.log('Continuing without sync...');
+    
+    // Start server anyway even if sync fails
+    app.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+        console.log(`Environment: ${process.env.NODE_ENV}`);
+    });
 });
