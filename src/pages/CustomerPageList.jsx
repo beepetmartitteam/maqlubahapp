@@ -18,6 +18,12 @@ import {
   Paper,
   Divider,
   SvgIcon,
+  TextField,
+  InputAdornment,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material'
 import {
   Search as SearchIcon,
@@ -35,8 +41,12 @@ import theme from '../theme'
 const CustomerPageList = () => {
   const navigate = useNavigate()
   const [customers, setCustomers] = useState([])
+  const [allCustomers, setAllCustomers] = useState([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [searchTerm, setSearchTerm] = useState('')
+  const [selectedUser, setSelectedUser] = useState('')
+  const [users, setUsers] = useState([])
 
   // Fetch customers from backend
   useEffect(() => {
@@ -48,10 +58,33 @@ const CustomerPageList = () => {
         if (authAPI.isAuthenticated()) {
           const token = authAPI.getToken()
           const customerData = await customerAPI.getCustomers(token)
+          setAllCustomers(customerData)
           setCustomers(customerData)
+          
+          // Extract users from customer data (all users from groups)
+          const allUsersFromGroups = customerData.flatMap(group => 
+            group.customers.map(customer => customer.user).filter(Boolean)
+          )
+          
+          // Remove duplicates and create unique users array
+          const uniqueUsersMap = new Map()
+          allUsersFromGroups.forEach(user => {
+            if (user && !uniqueUsersMap.has(user.id)) {
+              uniqueUsersMap.set(user.id, {
+                title: `${user.firstName} ${user.lastName}`,
+                userId: user.id,
+                user: user
+              })
+            }
+          })
+          
+          const uniqueUsers = Array.from(uniqueUsersMap.values())
+          setUsers(uniqueUsers)
         } else {
           // If not authenticated, show empty array
+          setAllCustomers([])
           setCustomers([])
+          setUsers([])
         }
       } catch (err) {
         console.error('Failed to fetch customers:', err)
@@ -65,8 +98,66 @@ const CustomerPageList = () => {
   }, [])
 
   const handleCustomerClick = (customerId) => {
-    navigate(`/customer-profile/:id=${customerId}`)
+    navigate(`/customer-profile/${customerId}`)
   }
+
+  // Handle search
+  const handleSearch = (event) => {
+    const searchValue = event.target.value.toLowerCase()
+    setSearchTerm(searchValue)
+    
+    if (searchValue === '') {
+      setCustomers(allCustomers)
+    } else {
+      const filtered = allCustomers.map(group => ({
+        ...group,
+        customers: group.customers.filter(customer =>
+          customer.name.toLowerCase().includes(searchValue)
+        )
+      })).filter(group => group.customers.length > 0)
+      
+      setCustomers(filtered)
+    }
+  }
+
+  // Handle user filter
+  const handleUserFilter = (event) => {
+    const userId = event.target.value
+    setSelectedUser(userId)
+    
+    if (userId === '') {
+      setCustomers(allCustomers)
+    } else {
+      const filtered = allCustomers.filter(group => 
+        group.customers.some(customer => customer.user?.id === parseInt(userId))
+      )
+      setCustomers(filtered)
+    }
+  }
+
+  // Combined filter (search + user filter)
+  useEffect(() => {
+    let filtered = allCustomers
+    
+    // Apply user filter first
+    if (selectedUser !== '') {
+      filtered = filtered.filter(group => 
+        group.customers.some(customer => customer.user?.id === parseInt(selectedUser))
+      )
+    }
+    
+    // Then apply search filter
+    if (searchTerm !== '') {
+      filtered = filtered.map(group => ({
+        ...group,
+        customers: group.customers.filter(customer =>
+          customer.name.toLowerCase().includes(searchTerm.toLowerCase())
+        )
+      })).filter(group => group.customers.length > 0)
+    }
+    
+    setCustomers(filtered)
+  }, [selectedUser, searchTerm, allCustomers])
 
   return (
     <ThemeProvider theme={theme}>
@@ -105,9 +196,56 @@ const CustomerPageList = () => {
           </Toolbar>
         </AppBar>
 
+        {/* Search and Filter Section */}
+        <Box sx={{ 
+          pt: '90px', 
+          px: 2,
+          pb: 2,
+          backgroundColor: 'background.paper',
+          borderBottom: '1px solid',
+          borderColor: 'divider'
+        }}>
+          <TextField
+            fullWidth
+            placeholder="Search customers by name..."
+            value={searchTerm}
+            onChange={handleSearch}
+            variant="outlined"
+            size="small"
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon sx={{ color: 'text.secondary' }} />
+                </InputAdornment>
+              )
+            }}
+            sx={{ mb: 2 }}
+          />
+          
+          {/*}
+          <FormControl fullWidth size="small">
+            <InputLabel>Filter by User</InputLabel>
+            <Select
+              value={selectedUser}
+              onChange={handleUserFilter}
+              label="Filter by User"
+            >
+              <MenuItem value="">
+                All Users
+              </MenuItem>
+              {users.map((user) => (
+                <MenuItem key={user.userId} value={user.userId}>
+                  {user.title}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+            {*/}
+        </Box>
+
         {/* Main Content */}
         <Box sx={{ 
-          pt: '50px', 
+          pt: 2, 
           pb: '240px',
           height: '100vh',
           overflowY: 'auto',

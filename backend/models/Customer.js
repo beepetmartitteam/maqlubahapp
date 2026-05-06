@@ -41,12 +41,7 @@ const Customer = sequelize.define('Customer', {
     },
     email: {
         type: DataTypes.STRING(255),
-        allowNull: true,
-        validate: {
-            isEmail: {
-                msg: 'Must be a valid email address'
-            }
-        }
+        allowNull: true
     },
     age: {
         type: DataTypes.STRING(10),
