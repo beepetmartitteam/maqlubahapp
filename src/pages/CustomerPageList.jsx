@@ -34,6 +34,7 @@ import {
   Person as PersonIcon,
   ChevronRight as ChevronRightIcon,
   Article as ArticleIcon,
+  Delete as DeleteIcon,
 } from '@mui/icons-material'
 import { ThemeProvider, createTheme } from '@mui/material/styles'
 import theme from '../theme'
@@ -99,6 +100,59 @@ const CustomerPageList = () => {
 
   const handleCustomerClick = (customerId) => {
     navigate(`/customer-profile/${customerId}`)
+  }
+
+  // Handle delete customer
+  const handleDeleteCustomer = async (customerId, customerName) => {
+    if (window.confirm(`Are you sure you want to delete ${customerName}?`)) {
+      try {
+        const token = authAPI.getToken()
+        await customerAPI.deleteCustomer(customerId, token)
+        
+        // Refresh customer list
+        const customerData = await customerAPI.getCustomers(token)
+        setAllCustomers(customerData)
+        setCustomers(customerData)
+        
+        // Extract users again
+        const allUsersFromGroups = customerData.flatMap(group => 
+          group.customers.map(customer => customer.user).filter(Boolean)
+        )
+        
+        const uniqueUsersMap = new Map()
+        allUsersFromGroups.forEach(user => {
+          if (user && !uniqueUsersMap.has(user.id)) {
+            uniqueUsersMap.set(user.id, {
+              title: `${user.firstName} ${user.lastName}`,
+              userId: user.id,
+              user: user
+            })
+          }
+        })
+        
+        const uniqueUsers = Array.from(uniqueUsersMap.values())
+        setUsers(uniqueUsers)
+        
+        alert('Customer deleted successfully')
+      } catch (error) {
+        console.error('Delete error:', error)
+        alert('Failed to delete customer: ' + error.message)
+      }
+    }
+  }
+
+  // Get current user ID from token
+  const getCurrentUserId = () => {
+    try {
+      const token = authAPI.getToken()
+      if (token) {
+        const payload = JSON.parse(atob(token.split('.')[1]))
+        return payload.userId
+      }
+    } catch (error) {
+      console.error('Error getting user ID:', error)
+      return null
+    }
   }
 
   // Handle search
@@ -313,7 +367,21 @@ const CustomerPageList = () => {
                       }}
                        onClick={() => navigate('/customer-profile/'+customer.id)}
                     />
-                    <IconButton 
+                        {/* Only show delete button for customers added by current user */}
+                    {group?.userId === getCurrentUserId() && (
+                      <IconButton 
+                        size="small" 
+                        onClick={(e) => {
+                          e.stopPropagation()
+                          handleDeleteCustomer(customer.id, customer.name)
+                        }}
+                        sx={{ mr: 1 }}
+                        title="Delete Customer"
+                      >
+                        <DeleteIcon sx={{ color: 'error.main', fontSize: 20 }} />
+                      </IconButton>
+                    )}
+  <IconButton 
                       size="small" 
                       onClick={() => navigate('/customer-notes/'+customer.id)}
                       sx={{ mr: 1 }}
@@ -321,6 +389,7 @@ const CustomerPageList = () => {
                     >
                       <ArticleIcon sx={{ color: 'text.secondary', fontSize: 20 }} />
                     </IconButton>
+                    {/*}
                     <IconButton 
                       size="small" 
                       onClick={() => navigate('/customer-profile/'+customer.id)}
@@ -328,6 +397,8 @@ const CustomerPageList = () => {
                     >
                       <ChevronRightIcon sx={{ color: 'text.secondary' }} />
                     </IconButton>
+                    {*/}
+
                   </ListItem>
                 ))}
               </List>

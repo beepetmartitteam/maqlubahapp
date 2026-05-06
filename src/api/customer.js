@@ -110,7 +110,7 @@ export const customerAPI = {
   },
 
   // Delete customer
-  deleteCustomer: async (token, customerId) => {
+  deleteCustomer: async ( customerId,token) => {
     try {
       const response = await fetch(`${API_BASE_URL}/customers/${customerId}`, {
         method: 'DELETE',

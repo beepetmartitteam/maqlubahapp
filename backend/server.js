@@ -408,6 +408,7 @@ app.get('/api/customers', authenticateToken, async (req, res) => {
             
             customerGroups.push({
                 title: `${user.firstName} ${user.lastName}`,
+                userId: user.id,
                 customers: userCustomers.map(customer => ({
                     id: customer.id,
                     name: customer.name,

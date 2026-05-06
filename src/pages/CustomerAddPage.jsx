@@ -49,6 +49,7 @@ const CustomerAddPage = () => {
   const [imagePreview, setImagePreview] = useState(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  const [success, setSuccess] = useState('')
   const [uploading, setUploading] = useState(false)
 
   const handleInputChange = (field) => (event) => {
@@ -94,7 +95,7 @@ const CustomerAddPage = () => {
       setError('Name is required')
       return
     }
-    
+
     try {
       setLoading(true)
       setError(null)
@@ -125,12 +126,37 @@ const CustomerAddPage = () => {
       const result = await customerAPI.createCustomer(token, customerData, images)
       console.log('Customer created successfully:', result)
 
-      // Navigate back to customer list
-      navigate('/customer')
+      // Show success message
+      setSuccess('Customer created successfully!')
+      
+      // Clear form
+      setFormData({
+        name: '',
+        umur: '',
+        location: '',
+        address: '',
+        phone: '',
+        email: '',
+        kerjaya: '',
+        kerjasama: '',
+        kehidupankeluarga: '',
+        notes: ''
+      })
+      setImagePreview(null)
+      setProfileImage(null)
+
+      // Navigate back to customer list after delay
+      setTimeout(() => {
+        navigate('/customer')
+      }, 2000)
       
     } catch (err) {
       console.error('Failed to create customer:', err)
-      setError(err.message || 'Failed to create customer')
+      
+      // Show error message
+      const errorMessage = err.message || 'Failed to create customer'
+      setError(errorMessage)
+      alert(errorMessage)
     } finally {
       setLoading(false)
     }
@@ -245,6 +271,24 @@ const CustomerAddPage = () => {
             </Box>
 
             <Divider sx={{ mb: 3 }} />
+
+            {/* Success Display */}
+            {success && (
+              <Box sx={{ mb: 2, p: 2, backgroundColor: 'success.light', borderRadius: 1 }}>
+                <Typography variant="body2" color="success.dark" sx={{ fontSize: '14px' }}>
+                  {success}
+                </Typography>
+              </Box>
+            )}
+
+            {/* Error Display */}
+            {error && (
+              <Box sx={{ mb: 2, p: 2, backgroundColor: 'error.light', borderRadius: 1 }}>
+                <Typography variant="body2" color="error.dark" sx={{ fontSize: '14px' }}>
+                  {error}
+                </Typography>
+              </Box>
+            )}
 
             {/* Form Fields */}
             <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
