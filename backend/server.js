@@ -384,7 +384,7 @@ app.get('/api/customers', authenticateToken, async (req, res) => {
        
 
         const customers = await Customer.findAll({
-            where: { userId: req.user.userId },
+            //where: { userId: req.user.userId },
             order: [['created_at', 'DESC']],
             include: [{
                 model: User,
@@ -431,7 +431,7 @@ app.get('/api/customers/:id', authenticateToken, async (req, res) => {
         const customer = await Customer.findOne({
             where: { 
                 id: req.params.id,
-                userId: req.user.userId 
+                //userId: req.user.userId 
             },
             include: [{
                 model: User,
@@ -496,7 +496,7 @@ app.put('/api/customers/:id', authenticateToken, async (req, res) => {
 
         const [updatedCount] = await Customer.update(
             { ...value, avatarUrl },
-            { where: { id, userId: req.user.userId } }
+            { where: { id} }
         );
 
         if (updatedCount === 0) {
@@ -515,7 +515,7 @@ app.delete('/api/customers/:id', authenticateToken, async (req, res) => {
         const { id } = req.params;
 
         const deletedCount = await Customer.destroy({
-            where: { id, userId: req.user.userId }
+            where: { id }
         });
 
         if (deletedCount === 0) {
@@ -583,8 +583,7 @@ app.delete('/api/notes/:id', authenticateToken, async (req, res) => {
         // First check if note exists and belongs to current user
         const note = await CustomerNote.findOne({
             where: { 
-                id: noteId,
-                userId: req.user.userId 
+                id: noteId
             }
         });
 

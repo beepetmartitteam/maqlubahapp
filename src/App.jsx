@@ -8,6 +8,7 @@ import CustomerAddPage from './pages/CustomerAddPage'
 import CustomerEditPage from './pages/CustomerEditPage'
 import CustomerAddNotePage from './pages/CustomerAddNotePage'
 import LoginPage from './pages/LoginPage'
+import RegisterPage from './pages/RegisterPage'
 
 import './App.css'
 
@@ -18,6 +19,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LoginPage />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/register" element={<RegisterPage />} />
           <Route path="/customer" element={<CustomerPageList />} />
           <Route path="/customer-profile/:id" element={<CustomerProfilePage />} />
           <Route path="/customer-notes/:id" element={<CustomerNotesPage />} />

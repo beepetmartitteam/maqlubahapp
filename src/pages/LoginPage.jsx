@@ -80,8 +80,7 @@ const LoginPage = () => {
   }
 
   const handleSignUp = () => {
-    console.log('Sign up clicked')
-    // Navigate to sign up page
+    navigate('/register')
   }
 
   return (
