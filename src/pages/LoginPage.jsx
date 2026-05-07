@@ -58,7 +58,7 @@ const LoginPage = () => {
       });
       
       console.log('Login successful:', data);
-      navigate('/customer');
+      navigate('/home');
     } catch (error) {
       console.error('Login error:', error.message);
       
