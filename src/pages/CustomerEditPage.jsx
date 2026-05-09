@@ -70,7 +70,8 @@ const CustomerEditPage = () => {
           throw new Error('No authentication token found')
         }
 
-        const customerData = await customerAPI.getCustomerById(id, token)
+        const response = await customerAPI.getCustomerById(id, token)
+        const customerData = response.data || response // Handle both response formats
         setCustomer(customerData)
         
         // Populate form with customer data

@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 
 const INITIAL_FOLDERS = [
   {
@@ -44,23 +44,220 @@ const INITIAL_FOLDERS = [
     amounts: Array(5).fill(0),
   },
 ];
-
 //const QUICK_AMOUNTS = [50, 100, 200];
 
 const QUICK_AMOUNTS = [50, 100];
+const MONTHS = [
+  { value: 1, label: "Januari" },
+  { value: 2, label: "Februari" },
+  { value: 3, label: "Mac" },
+  { value: 4, label: "April" },
+  { value: 5, label: "Mei" },
+  { value: 6, label: "Jun" },
+  { value: 7, label: "Julai" },
+  { value: 8, label: "Ogos" },
+  { value: 9, label: "September" },
+  { value: 10, label: "Oktober" },
+  { value: 11, label: "November" },
+  { value: 12, label: "Disember" }
+];
+
+const WEEKS = [
+  { value: 1, label: "Minggu 1" },
+  { value: 2, label: "Minggu 2" },
+  { value: 3, label: "Minggu 3" },
+  { value: 4, label: "Minggu 4" }
+];
+
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/jualan`;
+
 function JualanSabunMinimal() {
-  const [folders, setFolders] = useState(INITIAL_FOLDERS);
+  const [folders, setFolders] = useState([]);
   const [activeTab, setActiveTab] = useState(0);
   const [newMemberName, setNewMemberName] = useState("");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [resetDialog, setResetDialog] = useState(false);
+  const [selectedMonth, setSelectedMonth] = useState(5); // Default Mei
+  const [selectedWeek, setSelectedWeek] = useState(1); // Default Minggu 1
+  const [loading, setLoading] = useState(false);
+  const [recordSaved, setRecordSaved] = useState(false);
+  const [loadingAmounts, setLoadingAmounts] = useState(false);
+  const amountsLoadedRef = useRef(false);
+
+  // Fetch ahli data from backend
+  useEffect(() => {
+    fetchAhlis();
+  }, []);
+
+  // Reset amountsLoadedRef when month/week changes
+  useEffect(() => {
+    amountsLoadedRef.current = false;
+  }, [selectedMonth, selectedWeek]);
+
+  // Fetch existing amounts from database when month/week changes or folders are loaded
+  useEffect(() => {
+    console.log("useEffect triggered");
+    console.log("selectedMonth",selectedMonth);
+    console.log("selectedWeek",selectedWeek);
+
+    if (selectedMonth && selectedWeek && folders.length > 0 && folders[0].members && folders[0].members.length > 0) {
+      // Only fetch if folders are in object format (from API)
+      const isMemberObject = folders[0].members.length > 0 && typeof folders[0].members[0] === 'object' && folders[0].members[0].id !== undefined;
+      if (isMemberObject && !amountsLoadedRef.current) {
+        fetchExistingAmounts();
+        amountsLoadedRef.current = true;
+      }
+    }
+  }, [selectedMonth, selectedWeek, folders]); // Add folders dependency 
+
+  const fetchExistingAmounts = async () => {
+                      console.log("data");
+
+    if (loadingAmounts) return; // Prevent multiple simultaneous calls
+    
+    setLoadingAmounts(true);
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/jualan/records/${selectedMonth}/${selectedWeek}/2026`);
+      const data = await response.json();
+
+      if (data.success && data.data && data.data.details) {
+        console.log("data.data.details",data.data.details);
+        console.log("folders",folders);
+
+        // Create amounts array based on existing data
+        const newFolders = folders.map(folder => {
+          const folderAmounts = new Array(folder.members.length).fill(0);
+          
+          // Find amounts for this folder's members
+          data.data.details.forEach(detail => {
+            console.log("detail",detail);
+            console.log("folder.id",folder.id);
+            console.log("members",folder.members);
+
+            if (detail.folderId === folder.id) {
+               console.log("masukkkk-->",detail.folderId);
+               console.log("folder.members-->",folder.members);
+               console.log("detail.ahliId-->",detail.ahliId);
+               
+              const memberIndex = folder.members.findIndex(m => m.id == detail.ahliId);
+              if (memberIndex !== -1) {
+                folderAmounts[memberIndex] = parseFloat(detail.amount) || 0;
+              }
+            }
+          });
+          
+          return { ...folder, amounts: folderAmounts };
+        });
+        
+        setFolders(newFolders);
+      } else {
+        // Record not found, use INITIAL_FOLDERS with empty amounts
+        console.log("Record not found, using INITIAL_FOLDERS");
+        const initialFoldersWithEmptyAmounts = INITIAL_FOLDERS.map(folder => ({
+          ...folder,
+          amounts: new Array(folder.members.length).fill(0)
+        }));
+        setFolders(initialFoldersWithEmptyAmounts);
+      }
+    } catch (error) {
+      console.error('Error fetching existing amounts:', error);
+      // Reset amounts to 0 if error
+      const resetFolders = folders.map(folder => ({
+        ...folder,
+        amounts: new Array(folder.members.length).fill(0)
+      }));
+      setFolders(resetFolders);
+    } finally {
+      setLoadingAmounts(false);
+    }
+  };
+
+  const fetchAhlis = async () => {
+     console.log("fetchAhlis");
+    try {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL}/ahli`);
+      const data = await response.json();
+      
+      if (data.success && data.data) {
+        console.log("data.data",data.data);
+        setFolders(data.data);
+      } else {
+        // Fallback to INITIAL_FOLDERS if API response is invalid
+        setFolders([]);
+      }
+    } catch (error) {
+      console.error('Error fetching ahli:', error);
+      // Fallback to empty array on error
+      setFolders([]);
+    }
+  };
+
+  const saveRecord = async () => {
+    setLoading(true);
+    try {
+      const recordData = {
+        month: selectedMonth,
+        week: selectedWeek,
+        year: 2026,
+        totalAmount: grandTotal,
+        totalMembers: totalAhli,
+        paidMembers: totalBayar,
+        status: 'active',
+        details: []
+      };
+
+      // Add folder details
+      folders.forEach((folder, folderIndex) => {
+        (folder.members || []).forEach((member, memberIndex) => {
+          const amount = (folder.amounts || [])[memberIndex] || 0;
+          if (amount > 0) {
+            // Handle both string and object member formats
+            let ahliId;
+            if (typeof member === 'string') {
+              // String format: need to find ahli by name (this won't work properly)
+              console.warn('Cannot save with string member format. Please use ahli API data.');
+              return; // Skip this member
+            } else {
+              // Object format: {id, name}
+              ahliId = member.id;
+            }
+            
+            recordData.details.push({
+              folderId: folder.id,
+              folderLabel: folder.label,
+              ahliId: ahliId,
+              amount: amount
+            });
+          }
+        });
+      });
+
+      const response = await fetch(`${API_BASE_URL}/records`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(recordData)
+      });
+
+      const result = await response.json();
+      if (result.success) {
+        setRecordSaved(true);
+        setTimeout(() => setRecordSaved(false), 3000);
+      }
+    } catch (error) {
+      console.error('Error saving record:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const updateAmount = (fi, mi, val) => {
     const v = Math.max(0, parseInt(val) || 0);
     setFolders(prev => {
       const next = prev.map((f, i) => {
         if (i !== fi) return f;
-        const amounts = [...f.amounts];
+        const amounts = [...(f.amounts || [])];
         amounts[mi] = v;
         return { ...f, amounts };
       });
@@ -75,7 +272,7 @@ function JualanSabunMinimal() {
       prev.map((f, i) =>
         i !== fi
           ? f
-          : { ...f, members: [...f.members, name], amounts: [...f.amounts, 0] }
+          : { ...f, members: [...(f.members || []), name], amounts: [...(f.amounts || []), 0] }
       )
     );
     setNewMemberName("");
@@ -87,18 +284,21 @@ function JualanSabunMinimal() {
     alert("Data berjaya diset semula");
   };
 
-  const folderTotal = (f) => f.amounts.reduce((a, b) => a + b, 0);
+  const folderTotal = (f) => (f.amounts || []).reduce((a, b) => a + b, 0);
   const grandTotal = useMemo(() => folders.reduce((a, f) => a + folderTotal(f), 0), [folders]);
-  const totalAhli = useMemo(() => folders.reduce((a, f) => a + f.members.length, 0), [folders]);
-  const totalBayar = useMemo(() => folders.reduce((a, f) => a + f.amounts.filter(x => x > 0).length, 0), [folders]);
+  const totalAhli = useMemo(() => folders.reduce((a, f) => a + (f.members?.length || 0), 0), [folders]);
+  const totalBayar = useMemo(() => folders.reduce((a, f) => a + (f.amounts || []).filter(x => x > 0).length, 0), [folders]);
 
   const buildText = () => {
-    const lines = ["🗓️ *JUALAN SABUN MEI 2026*", ""];
+    const monthName = MONTHS.find(m => m.value === selectedMonth)?.label || "Mei";
+    const weekName = WEEKS.find(w => w.value === selectedWeek)?.label || "Minggu 1";
+    const lines = [`🗓️ *JUALAN SABUN ${monthName.toUpperCase()} 2026*`, `📅 ${weekName}`, ""];
     folders.forEach(f => {
       lines.push(`*${f.label}*`);
-      f.members.forEach((m, i) => {
-        const amt = f.amounts[i];
-        lines.push(`${i + 1}. ${m.padEnd(16)} ${amt > 0 ? "RM " + amt : "—"}`);
+      (f.members || []).forEach((m, i) => {
+        const amt = (f.amounts || [])[i] || 0;
+        const memberName = typeof m === 'string' ? m : m.name;
+        lines.push(`${i + 1}. ${memberName.padEnd(16)} ${amt > 0 ? "RM " + amt : "—"}`);
       });
       lines.push(`KEMASUKAN : RM ${folderTotal(f).toLocaleString()}`);
       lines.push("=================");
@@ -116,9 +316,9 @@ function JualanSabunMinimal() {
     window.open("https://wa.me/?text=" + encodeURIComponent(buildText()), "_blank");
   };
 
-  const activeFolder = folders[activeTab];
+  const activeFolder = folders[activeTab] || {};
   const activeFolderTotal = folderTotal(activeFolder);
-  const activePaid = activeFolder.amounts.filter(x => x > 0).length;
+  const activePaid = (activeFolder.amounts || []).filter(x => x > 0).length;
 
   return (
     <div style={{ minHeight: "100vh", backgroundColor: "#F7FAF9", padding: "16px", fontFamily: "'DM Sans', sans-serif",fontSize: "20px" }}>
@@ -126,11 +326,102 @@ function JualanSabunMinimal() {
 
         {/* Header */}
         <div style={{ marginBottom: "24px" }}>
-          <h1 style={{ color: "#0F6E56", margin: "0 0 8px 0", fontSize: "24px", fontWeight: 600 }}>
-            🧼 Jualan Sabun
-          </h1>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "16px" }}>
+            <h1 style={{ color: "#0F6E56", margin: 0, fontSize: "24px", fontWeight: 600 }}>
+              🧼 Jualan Sabun
+            </h1>
+            
+            <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+              <button
+                onClick={saveRecord}
+                disabled={loading}
+                style={{
+                  backgroundColor: loading ? "#999" : "#0F6E56",
+                  color: "white",
+                  border: "none",
+                  padding: "8px 16px",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  cursor: loading ? "not-allowed" : "pointer",
+                  fontWeight: 500,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                {loading ? "⏳" : "💾"} {loading ? "Menyimpan..." : "Simpan Rekod"}
+              </button>
+              
+              {recordSaved && (
+                <div style={{
+                  backgroundColor: "#1D9E75",
+                  color: "white",
+                  padding: "6px 12px",
+                  borderRadius: "4px",
+                  fontSize: "12px",
+                  fontWeight: 500
+                }}>
+                  ✅ Rekod disimpan!
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Month and Week Selection */}
+          <div style={{ display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" }}>
+            <div style={{ flex: 1, minWidth: "200px" }}>
+              <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px", fontWeight: 500 }}>
+                📅 Bulan
+              </label>
+              <select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(parseInt(e.target.value))}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #E8F0ED",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  backgroundColor: "white",
+                  cursor: "pointer"
+                }}
+              >
+                {MONTHS.map(month => (
+                  <option key={month.value} value={month.value}>
+                    {month.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div style={{ flex: 1, minWidth: "150px" }}>
+              <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px", fontWeight: 500 }}>
+                📆 Minggu
+              </label>
+              <select
+                value={selectedWeek}
+                onChange={(e) => setSelectedWeek(parseInt(e.target.value))}
+                style={{
+                  width: "100%",
+                  padding: "8px 12px",
+                  border: "1px solid #E8F0ED",
+                  borderRadius: "6px",
+                  fontSize: "14px",
+                  backgroundColor: "white",
+                  cursor: "pointer"
+                }}
+              >
+                {WEEKS.map(week => (
+                  <option key={week.value} value={week.value}>
+                    {week.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          
           <p style={{ color: "#666", margin: 0, fontSize: "14px" }}>
-            Mei 2026 · Rekod kemasukan bulanan
+            {MONTHS.find(m => m.value === selectedMonth)?.label || "Mei"} 2026 · Rekod kemasukan {WEEKS.find(w => w.value === selectedWeek)?.label || "Minggu 1"}
           </p>
         </div>
 
@@ -153,8 +444,8 @@ function JualanSabunMinimal() {
         {/* Folder Tabs */}
         <div style={{ backgroundColor: "white", borderRadius: "8px", border: "1px solid #E8F0ED", marginBottom: "16px" }}>
           <div style={{ display: "flex", borderBottom: "1px solid #E8F0ED", overflowX: "auto" }}>
-            {folders.map((f, i) => {
-              const paid = f.amounts.filter(x => x > 0).length;
+            {(folders || []).map((f, i) => {
+              const paid = (f.amounts || []).filter(x => x > 0).length;
               return (
                 <button
                   key={f.id}
@@ -212,7 +503,7 @@ function JualanSabunMinimal() {
                 fontSize: "11px",
                 fontWeight: 500
               }}>
-                {activePaid}/{activeFolder.members.length} bayar
+                {activePaid}/{(activeFolder.members || []).length} bayar
               </span>
               <span style={{ color: activeFolder.color, fontSize: "14px", fontWeight: 500 }}>
                 RM {activeFolderTotal.toLocaleString()}
@@ -222,8 +513,9 @@ function JualanSabunMinimal() {
 
           {/* Member Rows */}
           <div>
-            {activeFolder.members.map((name, mi) => {
-              const amt = activeFolder.amounts[mi];
+            {(activeFolder.members || []).map((member, mi) => {
+              const amt = (activeFolder.amounts || [])[mi] || 0;
+              const name = typeof member === 'string' ? member : member.name;
               const paid = amt > 0;
               return (
                 <div

@@ -45,7 +45,8 @@ const CustomerNotesPage = () => {
       await notesAPI.deleteNote(noteId, token)
       
       // Refresh notes list
-      const notesData = await notesAPI.getCustomerNotes(id, token)
+      const response = await notesAPI.getCustomerNotes(id, token)
+      const notesData = response.data || response // Handle both response formats
       setNotes(notesData)
     } catch (err) {
       console.error('Failed to delete note:', err)
@@ -73,7 +74,8 @@ const CustomerNotesPage = () => {
         const user = authAPI.getCurrentUser()
         setCurrentUser(user)
         
-        const notesData = await notesAPI.getCustomerNotes(id, token)
+        const response = await notesAPI.getCustomerNotes(id, token)
+        const notesData = response.data || response // Handle both response formats
         setNotes(notesData)
         
       } catch (err) {

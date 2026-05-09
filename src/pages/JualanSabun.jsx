@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   ThemeProvider,
   createTheme,
@@ -35,6 +35,7 @@ import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import PreviewIcon from "@mui/icons-material/Preview";
 
+const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/jualan`;
 const THEME_COLOR = "#0F6E56";
 
 const theme = createTheme({

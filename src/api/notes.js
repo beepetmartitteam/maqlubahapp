@@ -1,5 +1,5 @@
 // API Base URL
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5555/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:5557/api';
 
 // Customer Notes API functions
 export const notesAPI = {
@@ -89,7 +89,7 @@ export const notesAPI = {
   // Delete note
   deleteNote: async (noteId, token) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/notes/${noteId}`, {
+      const response = await fetch(`${API_BASE_URL}/customers/notes/${noteId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

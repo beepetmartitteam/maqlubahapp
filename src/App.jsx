@@ -11,6 +11,7 @@ import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
 import JualanSabun from './pages/JualanSabunMinimal'
+import JualanSabunList from './pages/JualanSabunList'
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
           <Route path="/customer-add-note/:id" element={<CustomerAddNotePage />} />
 
           <Route path="/jualan-sabun" element={<JualanSabun />} />
+          <Route path="/jualan-sabun-list" element={<JualanSabunList />} />
 
           <Route path="*" element={<div>Route not found</div>} />
         </Routes>

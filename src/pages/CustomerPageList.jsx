@@ -58,7 +58,8 @@ const CustomerPageList = () => {
         
         if (authAPI.isAuthenticated()) {
           const token = authAPI.getToken()
-          const customerData = await customerAPI.getCustomers(token)
+          const response = await customerAPI.getCustomers(token)
+          const customerData = response.data || response // Handle both response formats
           setAllCustomers(customerData)
           setCustomers(customerData)
           
@@ -110,7 +111,8 @@ const CustomerPageList = () => {
         await customerAPI.deleteCustomer(customerId, token)
         
         // Refresh customer list
-        const customerData = await customerAPI.getCustomers(token)
+        const response = await customerAPI.getCustomers(token)
+        const customerData = response.data || response // Handle both response formats
         setAllCustomers(customerData)
         setCustomers(customerData)
         

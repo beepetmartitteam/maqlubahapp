@@ -16,7 +16,6 @@ const { sequelize, User, Customer, CustomerNote, OAuthUser } = require('./models
 const authRoutes = require('./routes/auth');
 const customerRoutes = require('./routes/customer');
 const jualanSabunRoutes = require('./routes/jualan-sabun');
-const ahliRoutes = require('./routes/ahli');
 
 const app = express();
 
@@ -172,7 +171,6 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/jualan', jualanSabunRoutes);
-app.use('/api/ahli', ahliRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -199,7 +197,7 @@ app.use((req, res) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5557;
+const PORT = process.env.PORT || 5555;
 
 // Sync database and start server
 sequelize.sync({ 

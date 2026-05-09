@@ -60,8 +60,8 @@ const CustomerProfilePage = () => {
         console.log('customerAPI methods:', Object.keys(customerAPI))
         const customerData = await customerAPI.getCustomerById(id, token)
         console.log('Customer data fetched:', customerData)
-        console.log('Customer ID from data:', customerData.id)
-        setCustomer(customerData)
+        console.log('Customer ID from data:', customerData.data.id)
+        setCustomer(customerData.data)
         
         // Notes are already included in customerData.customerNotes
         if (customerData && customerData.customerNotes) {
