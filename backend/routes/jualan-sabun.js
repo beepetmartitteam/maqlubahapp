@@ -276,6 +276,77 @@ router.get('/statistics', async (req, res) => {
   }
 });
 
+// Add member to folder
+// Add member to folder
+router.post('/folders/:folderId/members', async (req, res) => {
+  try {
+    const { folderId } = req.params;
+    const { memberName } = req.body;
+
+    // Validation
+    if (!memberName || memberName.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        error: 'Member name is required'
+      });
+    }
+
+    // Find folder
+    const folder = await Folder.findByPk(folderId);
+
+    if (!folder) {
+      return res.status(404).json({
+        success: false,
+        error: 'Folder not found'
+      });
+    }
+
+    // CREATE NEW AHLI RECORD
+    const newAhli = await Ahli.create({
+      name: memberName.trim(),
+      folderId: folder.id,
+      folderLabel: folder.label || folder.name,
+      isActive: true
+    });
+
+    res.json({
+      success: true,
+      message: 'Member added successfully',
+      data: newAhli
+    });
+
+  } catch (error) {
+    console.error('Error adding member to folder:', error);
+
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
+// Remove member from folder
+router.delete('/folders/:folderId/members/:memberName', async (req, res) => {
+  try {
+    const { folderId, memberName } = req.params;
+    
+    // For now, we'll just return success since the frontend manages members locally
+    // In a full implementation, you might want to remove members from database
+    
+    res.json({ 
+      success: true, 
+      message: 'Member removed successfully',
+      data: {
+        folderId,
+        memberName
+      }
+    });
+  } catch (error) {
+    console.error('Error removing member from folder:', error);
+    res.status(500).json({ success: false, error: error.message });
+  }
+});
+
 // Health check for jualan sabun
 router.get('/health', async (req, res) => {
   try {

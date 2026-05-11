@@ -82,6 +82,7 @@ function JualanSabunMinimal() {
   const [loading, setLoading] = useState(false);
   const [recordSaved, setRecordSaved] = useState(false);
   const [loadingAmounts, setLoadingAmounts] = useState(false);
+  const [snackMsg, setSnackMsg] = useState("");
   const amountsLoadedRef = useRef(false);
 
   // Fetch ahli data from backend
@@ -93,6 +94,16 @@ function JualanSabunMinimal() {
   useEffect(() => {
     amountsLoadedRef.current = false;
   }, [selectedMonth, selectedWeek]);
+
+  // Auto-hide snack message after 3 seconds
+  useEffect(() => {
+    if (snackMsg) {
+      const timer = setTimeout(() => {
+        setSnackMsg("");
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [snackMsg]);
 
   // Fetch existing amounts from database when month/week changes or folders are loaded
   useEffect(() => {
@@ -265,17 +276,59 @@ function JualanSabunMinimal() {
     });
   };
 
-  const addMember = (fi) => {
+  
+  const addMember = async (fi) => {
     const name = newMemberName.trim();
     if (!name) return;
-    setFolders(prev =>
-      prev.map((f, i) =>
-        i !== fi
-          ? f
-          : { ...f, members: [...(f.members || []), name], amounts: [...(f.amounts || []), 0] }
-      )
-    );
-    setNewMemberName("");
+    
+    // Check if member already exists in this folder
+    const folder = folders[fi];
+    if (folder.members && folder.members.includes(name)) {
+      setSnackMsg(`Ahli "${name}" sudah wujud dalam ${folder.label}`);
+      return;
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/folders/${folder.id}/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          memberName: name,
+          ahliId: null // Could be enhanced to link with Ahli table
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local state only once
+        setFolders(prev =>
+          prev.map((f, i) =>
+            i !== fi
+              ? f
+              : { ...f, members: [...(f.members || []), name], amounts: [...(f.amounts || []), 0] }
+          )
+        );
+        setNewMemberName("");
+        setSnackMsg(`Ahli "${name}" berjaya ditambah ke ${folder.label}`);
+      } else {
+        setSnackMsg(`Gagal menambah ahli: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error adding member:', error);
+      // Fallback to local update if API fails
+      setFolders(prev =>
+        prev.map((f, i) =>
+          i !== fi
+            ? f
+            : { ...f, members: [...(f.members || []), name], amounts: [...(f.amounts || []), 0] }
+        )
+      );
+      setNewMemberName("");
+      setSnackMsg(`Ahli "${name}" ditambah (offline mode)`);
+    }
   };
 
   const resetAll = () => {
@@ -792,6 +845,39 @@ function JualanSabunMinimal() {
           </div>
         </div>
       )}
+
+      {/* Snack Message */}
+      {snackMsg && (
+        <div style={{
+          position: "fixed",
+          bottom: "20px",
+          left: "50%",
+          transform: "translateX(-50%)",
+          backgroundColor: "#333",
+          color: "white",
+          padding: "12px 20px",
+          borderRadius: "4px",
+          fontSize: "14px",
+          zIndex: 1001,
+          boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+          animation: "slideUp 0.3s ease-out"
+        }}>
+          {snackMsg}
+        </div>
+      )}
+      
+      <style jsx>{`
+        @keyframes slideUp {
+          from {
+            transform: translateX(-50%) translateY(100%);
+            opacity: 0;
+          }
+          to {
+            transform: translateX(-50%) translateY(0);
+            opacity: 1;
+          }
+        }
+      `}</style>
     </div>
   );
 }

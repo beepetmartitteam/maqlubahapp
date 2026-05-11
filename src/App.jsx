@@ -12,6 +12,8 @@ import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
 import JualanSabun from './pages/JualanSabunMinimal'
 import JualanSabunList from './pages/JualanSabunList'
+import CompanyApp from './CompanyApp'
+import CompanyManagement from './pages/CompanyManagement'
 
 function App() {
   return (
@@ -31,6 +33,9 @@ function App() {
 
           <Route path="/jualan-sabun" element={<JualanSabun />} />
           <Route path="/jualan-sabun-list" element={<JualanSabunList />} />
+
+          {/* Company Management Routes */}
+          <Route path="/company" element={<CompanyManagement />} />
 
           <Route path="*" element={<div>Route not found</div>} />
         </Routes>

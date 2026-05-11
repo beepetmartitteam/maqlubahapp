@@ -34,6 +34,7 @@ import SoapIcon from "@mui/icons-material/Soap";
 import CheckCircleOutlineIcon from "@mui/icons-material/CheckCircleOutline";
 import RadioButtonUncheckedIcon from "@mui/icons-material/RadioButtonUnchecked";
 import PreviewIcon from "@mui/icons-material/Preview";
+import DeleteIcon from "@mui/icons-material/Delete";
 
 const API_BASE_URL = `${import.meta.env.VITE_API_BASE_URL}/jualan`;
 const THEME_COLOR = "#0F6E56";
@@ -145,17 +146,92 @@ export default function JualanSabun() {
     });
   };
 
-  const addMember = (fi) => {
+  const addMember = async (fi) => {
     const name = newMemberName.trim();
     if (!name) return;
-    setFolders(prev =>
-      prev.map((f, i) =>
-        i !== fi
-          ? f
-          : { ...f, members: [...f.members, name], amounts: [...f.amounts, 0] }
-      )
-    );
-    setNewMemberName("");
+    
+    try {
+      const folder = folders[fi];
+      const response = await fetch(`${API_BASE_URL}/folders/${folder.id}/members`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          memberName: name,
+          ahliId: null // Could be enhanced to link with Ahli table
+        })
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local state
+        setFolders(prev =>
+          prev.map((f, i) =>
+            i !== fi
+              ? f
+              : { ...f, members: [...f.members, name], amounts: [...f.amounts, 0] }
+          )
+        );
+        setNewMemberName("");
+        setSnackMsg(`Ahli "${name}" berjaya ditambah ke ${folder.label}`);
+      } else {
+        setSnackMsg(`Gagal menambah ahli: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error adding member:', error);
+      // Fallback to local update if API fails
+      setFolders(prev =>
+        prev.map((f, i) =>
+          i !== fi
+            ? f
+            : { ...f, members: [...f.members, name], amounts: [...f.amounts, 0] }
+        )
+      );
+      setNewMemberName("");
+      setSnackMsg(`Ahli "${name}" ditambah (offline mode)`);
+    }
+  };
+
+  const removeMember = async (fi, mi) => {
+    const folder = folders[fi];
+    const memberName = folder.members[mi];
+    
+    try {
+      const response = await fetch(`${API_BASE_URL}/folders/${folder.id}/members/${encodeURIComponent(memberName)}`, {
+        method: 'DELETE'
+      });
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update local state
+        setFolders(prev =>
+          prev.map((f, i) => {
+            if (i !== fi) return f;
+            const newMembers = f.members.filter((_, idx) => idx !== mi);
+            const newAmounts = f.amounts.filter((_, idx) => idx !== mi);
+            return { ...f, members: newMembers, amounts: newAmounts };
+          })
+        );
+        setSnackMsg(`Ahli "${memberName}" berjaya dibuang dari ${folder.label}`);
+      } else {
+        setSnackMsg(`Gagal membuang ahli: ${result.error}`);
+      }
+    } catch (error) {
+      console.error('Error removing member:', error);
+      // Fallback to local update if API fails
+      setFolders(prev =>
+        prev.map((f, i) => {
+          if (i !== fi) return f;
+          const newMembers = f.members.filter((_, idx) => idx !== mi);
+          const newAmounts = f.amounts.filter((_, idx) => idx !== mi);
+          return { ...f, members: newMembers, amounts: newAmounts };
+        })
+      );
+      setSnackMsg(`Ahli "${memberName}" dibuang (offline mode)`);
+    }
   };
 
   const resetAll = () => {
@@ -386,6 +462,18 @@ export default function JualanSabun() {
                       }}
                       sx={{ width: 110 }}
                     />
+                    
+                    <IconButton
+                      size="small"
+                      onClick={() => removeMember(activeTab, mi)}
+                      sx={{
+                        p: 0.5,
+                        color: "text.secondary",
+                        "&:hover": { color: "error.main", bgcolor: "error.main" + "10" }
+                      }}
+                    >
+                      <DeleteIcon sx={{ fontSize: 16 }} />
+                    </IconButton>
                   </Box>
                 );
               })}

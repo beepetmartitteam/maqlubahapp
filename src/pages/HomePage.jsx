@@ -27,6 +27,14 @@ function HomePage() {
       icon: "🌳",
       color: "#993556",
       route: "/downline-tree"
+    },
+    {
+      id: "company-management-simple",
+      title: "Company Management",
+      description: "Multi company management interface",
+      icon: "🏢",
+      color: "#2e7d32",
+      route: "/company"
     }
   ];
 
