@@ -10,10 +10,13 @@ import CustomerAddNotePage from './pages/CustomerAddNotePage'
 import LoginPage from './pages/LoginPage'
 import RegisterPage from './pages/RegisterPage'
 import HomePage from './pages/HomePage'
-import JualanSabun from './pages/JualanSabunMinimal'
-import JualanSabunList from './pages/JualanSabunList'
+import JualanSabun from './pages/JualanSabunMinimal';
+import JualanSabunList from './pages/JualanSabunList';
+import JualanSabunReport from './pages/JualanSabunReport';
 import CompanyApp from './CompanyApp'
 import CompanyManagement from './pages/CompanyManagement'
+import CompanyManagementList from './pages/CompanyManagementList'
+import CompanyManagementDetail from './pages/CompanyManagementDetail'
 
 function App() {
   return (
@@ -33,9 +36,11 @@ function App() {
 
           <Route path="/jualan-sabun" element={<JualanSabun />} />
           <Route path="/jualan-sabun-list" element={<JualanSabunList />} />
+          <Route path="/jualan-sabun-report" element={<JualanSabunReport />} />
 
           {/* Company Management Routes */}
-          <Route path="/company" element={<CompanyManagement />} />
+          <Route path="/company-management" element={<CompanyManagementList />} />
+          <Route path="/company-management/:id" element={<CompanyManagementDetail />} />
 
           <Route path="*" element={<div>Route not found</div>} />
         </Routes>

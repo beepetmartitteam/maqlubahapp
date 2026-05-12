@@ -6,6 +6,13 @@ const OAuthUser = require('./OAuthUser');
 const jualanSabun = require('./jualanSabun');
 const Ahli = require('./ahli');
 
+// Company Management models
+const Company = require('./Company');
+const Staff = require('./Staff');
+const Plan = require('./Plan');
+const Report = require('./Report');
+const Task = require('./Task');
+
 // Define associations
 User.hasMany(Customer, {
     foreignKey: 'userId',
@@ -55,6 +62,28 @@ const AhliModel = Ahli(sequelize);
 const jualanSabunModels = jualanSabun(sequelize);
 const { JualanSabunRecord, JualanSabunDetail, Folder } = jualanSabunModels;
 
+// Company Management models
+const CompanyModel = Company(sequelize);
+const StaffModel = Staff(sequelize);
+const PlanModel = Plan(sequelize);
+const ReportModel = Report(sequelize);
+// const TaskModel = Task(sequelize); // Temporarily disabled to isolate issue
+
+// Set up Company Management associations
+const models = {
+  Company: CompanyModel,
+  Staff: StaffModel,
+  Plan: PlanModel,
+  Report: ReportModel
+  // Task: TaskModel // Temporarily disabled
+};
+
+CompanyModel.associate(models);
+StaffModel.associate(models);
+PlanModel.associate(models);
+ReportModel.associate(models);
+// TaskModel.associate(models); // Temporarily disabled
+
 
 
 // Sync database
@@ -80,5 +109,11 @@ module.exports = {
     JualanSabunRecord,
     JualanSabunDetail,
     Folder,
+    // Company Management models
+    Company: CompanyModel,
+    Staff: StaffModel,
+    Plan: PlanModel,
+    Report: ReportModel,
+    // Task: TaskModel, // Temporarily disabled
     syncDatabase
 };

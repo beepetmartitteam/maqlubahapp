@@ -17,6 +17,7 @@ const authRoutes = require('./routes/auth');
 const customerRoutes = require('./routes/customer');
 const jualanSabunRoutes = require('./routes/jualan-sabun');
 const ahliRoutes = require('./routes/ahli');
+const companyManagementRoutes = require('./routes/company-management');
 
 const app = express();
 
@@ -148,6 +149,7 @@ app.get('/', (req, res) => {
       auth: '/api/auth',
       customers: '/api/customers',
       jualan_sabun: '/api/jualan',
+      company_management: '/api/company-management',
       health: '/api/health'
     }
   });
@@ -163,7 +165,8 @@ app.get('/api/health', (req, res) => {
       database: 'connected',
       auth: 'available',
       customers: 'available',
-      jualan_sabun: 'available'
+      jualan_sabun: 'available',
+      company_management: 'available'
     }
   });
 });
@@ -173,6 +176,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/customers', customerRoutes);
 app.use('/api/jualan', jualanSabunRoutes);
 app.use('/api/ahli', ahliRoutes);
+app.use('/api/company-management', companyManagementRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -193,6 +197,7 @@ app.use((req, res) => {
       auth: '/api/auth',
       customers: '/api/customers',
       jualan_sabun: '/api/jualan',
+      company_management: '/api/company-management',
       health: '/api/health'
     }
   });
