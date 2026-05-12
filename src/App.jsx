@@ -18,6 +18,8 @@ import CompanyManagementDetail from './pages/CompanyManagementDetail';
 import CompanyManagementDashboard from './pages/CompanyManagementDashboard';
 import CompanyManagementStaffList from './pages/CompanyManagementStaffList';
 import CompanyManagementPlanList from './pages/CompanyManagementPlanList';
+import MembersList from './pages/MembersList';
+import MemberDetail from './pages/MemberDetail';
 
 function App() {
   return (
@@ -45,6 +47,10 @@ function App() {
           <Route path="/company-management-staff" element={<CompanyManagementStaffList />} />
           <Route path="/company-management-plans" element={<CompanyManagementPlanList />} />
           <Route path="/company-management/:id" element={<CompanyManagementDetail />} />
+
+          {/* Members Management Routes */}
+          <Route path="/members" element={<MembersList />} />
+          <Route path="/member-detail/:id" element={<MemberDetail />} />
 
           <Route path="*" element={<div>Route not found</div>} />
         </Routes>

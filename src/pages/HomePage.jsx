@@ -35,6 +35,14 @@ function HomePage() {
       icon: "🏢",
       color: "#2e7d32",
       route: "/company-management-dashboard"
+    },
+    {
+      id: "members",
+      title: "Members Management",
+      description: "Manage member profiles and membership information",
+      icon: "👥",
+      color: "#4caf50",
+      route: "/members"
     }
   ];
 
