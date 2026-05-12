@@ -13,10 +13,11 @@ import HomePage from './pages/HomePage'
 import JualanSabun from './pages/JualanSabunMinimal';
 import JualanSabunList from './pages/JualanSabunList';
 import JualanSabunReport from './pages/JualanSabunReport';
-import CompanyApp from './CompanyApp'
-import CompanyManagement from './pages/CompanyManagement'
-import CompanyManagementList from './pages/CompanyManagementList'
-import CompanyManagementDetail from './pages/CompanyManagementDetail'
+import CompanyManagementList from './pages/CompanyManagementList';
+import CompanyManagementDetail from './pages/CompanyManagementDetail';
+import CompanyManagementDashboard from './pages/CompanyManagementDashboard';
+import CompanyManagementStaffList from './pages/CompanyManagementStaffList';
+import CompanyManagementPlanList from './pages/CompanyManagementPlanList';
 
 function App() {
   return (
@@ -39,7 +40,10 @@ function App() {
           <Route path="/jualan-sabun-report" element={<JualanSabunReport />} />
 
           {/* Company Management Routes */}
+          <Route path="/company-management-dashboard" element={<CompanyManagementDashboard />} />
           <Route path="/company-management" element={<CompanyManagementList />} />
+          <Route path="/company-management-staff" element={<CompanyManagementStaffList />} />
+          <Route path="/company-management-plans" element={<CompanyManagementPlanList />} />
           <Route path="/company-management/:id" element={<CompanyManagementDetail />} />
 
           <Route path="*" element={<div>Route not found</div>} />

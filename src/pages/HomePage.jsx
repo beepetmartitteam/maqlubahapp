@@ -34,7 +34,7 @@ function HomePage() {
       description: "Multi company management interface",
       icon: "🏢",
       color: "#2e7d32",
-      route: "/company-management"
+      route: "/company-management-dashboard"
     }
   ];
 

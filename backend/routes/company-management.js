@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const { Company, Staff, Plan, Report, Task } = require('../models');
+const { Company, Staff, Plan, Report, Task, sequelize } = require('../models');
 
 // Health check for company management (move to top to avoid conflicts)
 router.get('/health', async (req, res) => {
@@ -56,6 +56,140 @@ router.get('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching companies:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: error.message 
+    });
+  }
+});
+
+// Dashboard endpoint
+router.get('/dashboard', async (req, res) => {
+  try {
+    // Simple approach - get companies without complex includes first
+    const companies = await Company.findAll({
+      order: [['updated_at', 'DESC']]
+    });
+
+    // Get staff and plans counts separately
+    const staffCounts = await Staff.findAll({
+      attributes: [
+        'company_id',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['company_id']
+    });
+
+    const planCounts = await Plan.findAll({
+      attributes: [
+        'company_id',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['company_id']
+    });
+
+    // Calculate dashboard statistics
+    let totalStaff = 0;
+    let totalPlans = 0;
+    let totalRevenue = 0;
+    let totalGrowth = 0;
+    let activeCompanies = 0;
+    const plansByStatus = { planning: 0, 'in-progress': 0, completed: 0, cancelled: 0, 'on-hold': 0 };
+    const companiesByIndustry = {};
+
+    companies.forEach(company => {
+      // Basic stats
+      totalRevenue += parseFloat(company.revenue || 0);
+      totalGrowth += parseFloat(company.growth || 0);
+      
+      if (company.status === 'active') {
+        activeCompanies++;
+      }
+
+      // Industry breakdown
+      const industry = company.industry || 'Other';
+      companiesByIndustry[industry] = (companiesByIndustry[industry] || 0) + 1;
+    });
+
+    // Count staff and plans
+    staffCounts.forEach(staffCount => {
+      totalStaff += parseInt(staffCount.dataValues.count);
+    });
+
+    planCounts.forEach(planCount => {
+      totalPlans += parseInt(planCount.dataValues.count);
+    });
+
+    // Get plan status breakdown
+    const planStatuses = await Plan.findAll({
+      attributes: [
+        'status',
+        [sequelize.fn('COUNT', sequelize.col('id')), 'count']
+      ],
+      group: ['status']
+    });
+
+    planStatuses.forEach(status => {
+      plansByStatus[status.dataValues.status] = parseInt(status.dataValues.count);
+    });
+
+    // Get recent activity (simplified)
+    const recentPlans = await Plan.findAll({
+      include: [{
+        model: Company,
+        as: 'company',
+        attributes: ['name', 'color']
+      }],
+      order: [['updated_at', 'DESC']],
+      limit: 5
+    });
+
+    const recentActivity = recentPlans.map(plan => ({
+      type: 'plan',
+      company: plan.company.name,
+      title: plan.title,
+      status: plan.status,
+      date: plan.updated_at,
+      color: plan.company.color
+    }));
+
+    const dashboardData = {
+      overview: {
+        totalCompanies: companies.length,
+        totalStaff,
+        totalPlans,
+        totalRevenue,
+        averageGrowth: companies.length > 0 ? (totalGrowth / companies.length).toFixed(2) : 0,
+        activeCompanies
+      },
+      charts: {
+        plansByStatus,
+        companiesByIndustry
+      },
+      recentActivity,
+      companies: companies.map(company => ({
+        id: company.id,
+        name: company.name,
+        industry: company.industry,
+        employees: company.employees,
+        revenue: company.revenue,
+        growth: company.growth,
+        status: company.status,
+        color: company.color,
+        ceo: company.ceo,
+        staffCount: staffCounts.find(s => s.company_id === company.id)?.dataValues.count || 0,
+        plansCount: planCounts.find(p => p.company_id === company.id)?.dataValues.count || 0,
+        updated_at: company.updated_at
+      }))
+    };
+
+    res.json({
+      success: true,
+      data: dashboardData,
+      message: 'Dashboard data retrieved successfully'
+    });
+  } catch (error) {
+    console.error('Error fetching dashboard data:', error);
     res.status(500).json({ 
       success: false, 
       error: error.message 

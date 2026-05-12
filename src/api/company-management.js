@@ -368,5 +368,27 @@ export const companyManagementAPI = {
       console.error('Health check error:', error);
       throw error;
     }
+  },
+
+  // Get dashboard data
+  getDashboardData: async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/company-management/dashboard`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Dashboard data fetch failed: ${response.statusText}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Dashboard data error:', error);
+      throw error;
+    }
   }
 };
