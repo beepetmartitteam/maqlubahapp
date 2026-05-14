@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
+import { memberAPI } from "../api/member";
 
 // Responsive hook for detecting mobile screens
 const useResponsive = () => {
@@ -194,24 +195,9 @@ function MembersList() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [showAddMember, setShowAddMember] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
-  const [newMember, setNewMember] = useState({
-    husbandName: "",
-    age: "",
-    phone: "",
-    homeAddress: "",
-    district: "",
-    state: "",
-    wives: [],
-    marriedChildren: 0,
-    unmarriedChildren: 0,
-    currentJob: "",
-    companyName: "",
-    status: "active"
-  });
   const navigate = useNavigate();
 
   // Fetch members from API
@@ -223,11 +209,20 @@ function MembersList() {
     try {
       setLoading(true);
       setError(null);
-      // For now, use initial data. In production, this would call API
-      setMembers(INITIAL_MEMBERS);
+      const token = localStorage.getItem('token');
+      const response = await memberAPI.getMembers(token);
+      
+      if (response.success) {
+        setMembers(response.data);
+      } else {
+        setError(response.error || 'Failed to fetch members');
+        // Fallback to initial data
+        setMembers(INITIAL_MEMBERS);
+      }
     } catch (err) {
       console.error('Error fetching members:', err);
       setError('Failed to connect to server');
+      // Fallback to initial data
       setMembers(INITIAL_MEMBERS);
     } finally {
       setLoading(false);
@@ -236,59 +231,6 @@ function MembersList() {
 
   const handleMemberClick = (member) => {
     navigate(`/member-detail/${member.id}`);
-  };
-
-  const handleAddMember = async () => {
-    if (newMember.husbandName.trim() && newMember.phone.trim()) {
-      try {
-        const memberData = {
-          ...newMember,
-          age: parseInt(newMember.age) || 0,
-          marriedChildren: parseInt(newMember.marriedChildren) || 0,
-          unmarriedChildren: parseInt(newMember.unmarriedChildren) || 0
-        };
-        
-        // For now, just add to local state
-        const newMemberWithId = {
-          ...memberData,
-          id: Date.now(),
-          joinDate: new Date().toISOString().split('T')[0],
-          lastUpdated: new Date().toISOString().split('T')[0],
-          // Add default values for assessment fields
-          struggleUnderstanding: "",
-          familySituation: "",
-          welfareStatus: "",
-          fivePActivities: [],
-          complianceLevel: "",
-          struggleAssessment: 3,
-          familyManagementAssessment: 3,
-          welfareAssessment: 3,
-          fivePAssessment: 3,
-          complianceAssessment: 3,
-          summary: ""
-        };
-        
-        setMembers([...members, newMemberWithId]);
-        setNewMember({
-          husbandName: "",
-          age: "",
-          phone: "",
-          homeAddress: "",
-          district: "",
-          state: "",
-          wives: [],
-          marriedChildren: 0,
-          unmarriedChildren: 0,
-          currentJob: "",
-          companyName: "",
-          status: "active"
-        });
-        setShowAddMember(false);
-      } catch (err) {
-        console.error('Error adding member:', err);
-        setError('Failed to add member');
-      }
-    }
   };
 
   const getStatusColor = (status) => {
@@ -342,29 +284,48 @@ function MembersList() {
           maxWidth: "1200px",
           margin: "0 auto"
         }}>
+          
           <div>
+            
             <h1 style={{ margin: 0, fontSize: isMobile ? "24px" : "32px", fontWeight: 600, color: "#333" }}>
               Members Management
             </h1>
-            <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>
+            <p style={{ margin: "16px 0 0 0", fontSize: "14px", color: "#666" }}>
               Manage member profiles and membership information
             </p>
           </div>
-          <button
-            onClick={() => setShowAddMember(true)}
-            style={{
-              backgroundColor: "#1976d2",
-              color: "white",
-              border: "none",
-              padding: "12px 24px",
-              borderRadius: "8px",
-              fontSize: "14px",
-              fontWeight: 500,
-              cursor: "pointer"
-            }}
-          >
-            + Add Member
-          </button>
+          <div style={{ display: "flex", gap: "12px" }}>
+            <button
+              onClick={() => navigate('/home')}
+              style={{
+                backgroundColor: "transparent",
+                color: "#666",
+                border: "1px solid #ddd",
+                padding: "12px 30px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: "pointer"
+              }}
+            >
+              ← 
+            </button>
+            <button
+              onClick={() => navigate('/members/add')}
+              style={{
+                backgroundColor: "#1976d2",
+                color: "white",
+                border: "none",
+                padding: "12px 24px",
+                borderRadius: "8px",
+                fontSize: "14px",
+                fontWeight: 500,
+                cursor: "pointer"
+              }}
+            >
+              + Add Member
+            </button>
+          </div>
         </div>
       </div>
 
@@ -701,37 +662,73 @@ function MembersList() {
 
                   {/* Assessment Preview */}
                   <div style={{ marginBottom: "16px" }}>
-                    <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px" }}>Key Assessments</div>
-                    <div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+                    <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Key Assessments</div>
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
                       <span style={{
-                        backgroundColor: "#e3f2fd",
-                        color: "#1976d2",
-                        padding: "4px 8px",
-                        borderRadius: "12px",
+                        backgroundColor: member.struggleAssessment >= 4 ? "#e8f5e8" : member.struggleAssessment >= 3 ? "#fff3e0" : "#ffebee",
+                        color: member.struggleAssessment >= 4 ? "#4caf50" : member.struggleAssessment >= 3 ? "#ff9800" : "#f44336",
+                        padding: "4px 10px",
+                        borderRadius: "16px",
                         fontSize: "11px",
-                        fontWeight: 500
+                        fontWeight: 600,
+                        border: "1px solid rgba(0,0,0,0.08)"
                       }}>
                         Struggle: {member.struggleAssessment}/5
                       </span>
                       <span style={{
-                        backgroundColor: "#e8f5e8",
-                        color: "#4caf50",
-                        padding: "4px 8px",
-                        borderRadius: "12px",
+                        backgroundColor: member.familyManagementAssessment >= 4 ? "#e8f5e8" : member.familyManagementAssessment >= 3 ? "#fff3e0" : "#ffebee",
+                        color: member.familyManagementAssessment >= 4 ? "#4caf50" : member.familyManagementAssessment >= 3 ? "#ff9800" : "#f44336",
+                        padding: "4px 10px",
+                        borderRadius: "16px",
                         fontSize: "11px",
-                        fontWeight: 500
+                        fontWeight: 600,
+                        border: "1px solid rgba(0,0,0,0.08)"
                       }}>
                         Family: {member.familyManagementAssessment}/5
                       </span>
                       <span style={{
-                        backgroundColor: "#fff3e0",
-                        color: "#ff9800",
-                        padding: "4px 8px",
-                        borderRadius: "12px",
+                        backgroundColor: member.welfareAssessment >= 4 ? "#e8f5e8" : member.welfareAssessment >= 3 ? "#fff3e0" : "#ffebee",
+                        color: member.welfareAssessment >= 4 ? "#4caf50" : member.welfareAssessment >= 3 ? "#ff9800" : "#f44336",
+                        padding: "4px 10px",
+                        borderRadius: "16px",
                         fontSize: "11px",
-                        fontWeight: 500
+                        fontWeight: 600,
+                        border: "1px solid rgba(0,0,0,0.08)"
+                      }}>
+                        Welfare: {member.welfareAssessment}/5
+                      </span>
+                      <span style={{
+                        backgroundColor: member.fivePAssessment >= 4 ? "#e8f5e8" : member.fivePAssessment >= 3 ? "#fff3e0" : "#ffebee",
+                        color: member.fivePAssessment >= 4 ? "#4caf50" : member.fivePAssessment >= 3 ? "#ff9800" : "#f44336",
+                        padding: "4px 10px",
+                        borderRadius: "16px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        border: "1px solid rgba(0,0,0,0.08)"
                       }}>
                         5P: {member.fivePAssessment}/5
+                      </span>
+                      <span style={{
+                        backgroundColor: member.complianceAssessment >= 4 ? "#e8f5e8" : member.complianceAssessment >= 3 ? "#fff3e0" : "#ffebee",
+                        color: member.complianceAssessment >= 4 ? "#4caf50" : member.complianceAssessment >= 3 ? "#ff9800" : "#f44336",
+                        padding: "4px 10px",
+                        borderRadius: "16px",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        border: "1px solid rgba(0,0,0,0.08)"
+                      }}>
+                        Compliance: {member.complianceAssessment}/5
+                      </span>
+                      <span style={{
+                        backgroundColor: "#e3f2fd",
+                        color: "#1976d2",
+                        padding: "4px 10px",
+                        borderRadius: "16px",
+                        fontSize: "11px",
+                        fontWeight: 700,
+                        border: "1px solid rgba(25, 118, 210, 0.2)"
+                      }}>
+                        Overall: {Math.round((member.struggleAssessment + member.familyManagementAssessment + member.welfareAssessment + member.fivePAssessment + member.complianceAssessment) / 5)}/5
                       </span>
                     </div>
                   </div>
@@ -802,7 +799,7 @@ function MembersList() {
                   : "Start by adding your first member"}
               </p>
               <button
-                onClick={() => setShowAddMember(true)}
+                onClick={() => navigate('/members/add')}
                 style={{
                   backgroundColor: "#1976d2",
                   color: "white",
@@ -821,271 +818,6 @@ function MembersList() {
         </div>
       </div>
 
-      {/* Add Member Dialog */}
-      {showAddMember && (
-        <div style={{
-          position: "fixed",
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          backgroundColor: "rgba(0,0,0,0.5)",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          zIndex: 1000
-        }}>
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: "12px",
-            padding: "24px",
-            width: "90%",
-            maxWidth: "600px",
-            maxHeight: "80vh",
-            overflowY: "auto"
-          }}>
-            <h3 style={{ margin: "0 0 24px 0", fontSize: "20px", fontWeight: 600, color: "#333" }}>
-              Add New Member
-            </h3>
-            
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Husband Name *
-                </label>
-                <input
-                  type="text"
-                  value={newMember.husbandName}
-                  onChange={(e) => setNewMember({...newMember, husbandName: e.target.value})}
-                  placeholder="Enter husband's name"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Age
-                </label>
-                <input
-                  type="number"
-                  value={newMember.age}
-                  onChange={(e) => setNewMember({...newMember, age: e.target.value})}
-                  placeholder="Enter age"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Phone *
-                </label>
-                <input
-                  type="tel"
-                  value={newMember.phone}
-                  onChange={(e) => setNewMember({...newMember, phone: e.target.value})}
-                  placeholder="Enter phone number"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  District
-                </label>
-                <input
-                  type="text"
-                  value={newMember.district}
-                  onChange={(e) => setNewMember({...newMember, district: e.target.value})}
-                  placeholder="Enter district"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Home Address
-              </label>
-              <input
-                type="text"
-                value={newMember.homeAddress}
-                onChange={(e) => setNewMember({...newMember, homeAddress: e.target.value})}
-                placeholder="Enter home address"
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #ddd",
-                  borderRadius: "6px",
-                  fontSize: "14px"
-                }}
-              />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  State
-                </label>
-                <select
-                  value={newMember.state}
-                  onChange={(e) => setNewMember({...newMember, state: e.target.value})}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                >
-                  <option value="">Select State</option>
-                  <option value="Selangor">Selangor</option>
-                  <option value="Wilayah Persekutuan">Wilayah Persekutuan</option>
-                  <option value="Kuala Lumpur">Kuala Lumpur</option>
-                  <option value="Johor">Johor</option>
-                  <option value="Perak">Perak</option>
-                </select>
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Current Job
-                </label>
-                <input
-                  type="text"
-                  value={newMember.currentJob}
-                  onChange={(e) => setNewMember({...newMember, currentJob: e.target.value})}
-                  placeholder="Enter current job"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ marginBottom: "16px" }}>
-              <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Company Name
-              </label>
-              <input
-                type="text"
-                value={newMember.companyName}
-                onChange={(e) => setNewMember({...newMember, companyName: e.target.value})}
-                placeholder="Enter company/business name"
-                style={{
-                  width: "100%",
-                  padding: "12px",
-                  border: "1px solid #ddd",
-                  borderRadius: "6px",
-                  fontSize: "14px"
-                }}
-              />
-            </div>
-
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px", marginBottom: "16px" }}>
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Married Children
-                </label>
-                <input
-                  type="number"
-                  value={newMember.marriedChildren}
-                  onChange={(e) => setNewMember({...newMember, marriedChildren: e.target.value})}
-                  placeholder="0"
-                  min="0"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
-              </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Unmarried Children
-                </label>
-                <input
-                  type="number"
-                  value={newMember.unmarriedChildren}
-                  onChange={(e) => setNewMember({...newMember, unmarriedChildren: e.target.value})}
-                  placeholder="0"
-                  min="0"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
-              </div>
-            </div>
-
-            <div style={{ display: "flex", gap: "12px", justifyContent: "flex-end" }}>
-              <button
-                onClick={() => setShowAddMember(false)}
-                style={{
-                  backgroundColor: "transparent",
-                  color: "#666",
-                  border: "1px solid #ddd",
-                  padding: "12px 24px",
-                  borderRadius: "6px",
-                  fontSize: "14px",
-                  cursor: "pointer"
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleAddMember}
-                style={{
-                  backgroundColor: "#1976d2",
-                  color: "white",
-                  border: "none",
-                  padding: "12px 24px",
-                  borderRadius: "6px",
-                  fontSize: "14px",
-                  cursor: "pointer"
-                }}
-              >
-                Add Member
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

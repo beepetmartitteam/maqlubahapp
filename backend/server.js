@@ -18,6 +18,7 @@ const customerRoutes = require('./routes/customer');
 const jualanSabunRoutes = require('./routes/jualan-sabun');
 const ahliRoutes = require('./routes/ahli');
 const companyManagementRoutes = require('./routes/company-management');
+const memberRoutes = require('./routes/member');
 
 const app = express();
 
@@ -166,7 +167,8 @@ app.get('/api/health', (req, res) => {
       auth: 'available',
       customers: 'available',
       jualan_sabun: 'available',
-      company_management: 'available'
+      company_management: 'available',
+      members: 'available'
     }
   });
 });
@@ -177,6 +179,7 @@ app.use('/api/customers', customerRoutes);
 app.use('/api/jualan', jualanSabunRoutes);
 app.use('/api/ahli', ahliRoutes);
 app.use('/api/company-management', companyManagementRoutes);
+app.use('/api/members', memberRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
@@ -198,6 +201,7 @@ app.use((req, res) => {
       customers: '/api/customers',
       jualan_sabun: '/api/jualan',
       company_management: '/api/company-management',
+      members: '/api/members',
       health: '/api/health'
     }
   });
@@ -219,6 +223,7 @@ sequelize.sync({
     console.log(`   🔐 Authentication: /api/auth`);
     console.log(`   👥 Customer Management: /api/customers`);
     console.log(`   🧼 Jualan Sabun: /api/jualan`);
+    console.log(`   👨‍👩‍👧‍👦 Member Management: /api/members`);
     console.log(`   ❤️  Health Check: /api/health`);
     console.log(`🌐 Server: http://localhost:${PORT}`);
   });

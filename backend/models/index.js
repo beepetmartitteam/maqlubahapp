@@ -13,6 +13,9 @@ const Plan = require('./Plan');
 const Report = require('./Report');
 const Task = require('./Task');
 
+// Member Management model
+const Member = require('./member');
+
 // Define associations
 User.hasMany(Customer, {
     foreignKey: 'userId',
@@ -69,13 +72,18 @@ const PlanModel = Plan(sequelize);
 const ReportModel = Report(sequelize);
 // const TaskModel = Task(sequelize); // Temporarily disabled to isolate issue
 
-// Set up Company Management associations
+// Member Management model
+const MemberModel = Member(sequelize);
+
+// Set up Company Management associations (User included for Member.belongsTo)
 const models = {
+  User,
   Company: CompanyModel,
   Staff: StaffModel,
   Plan: PlanModel,
-  Report: ReportModel
-  // Task: TaskModel // Temporarily disabled
+  Report: ReportModel,
+  // Task: TaskModel, // Temporarily disabled
+  Member: MemberModel
 };
 
 CompanyModel.associate(models);
@@ -83,6 +91,9 @@ StaffModel.associate(models);
 PlanModel.associate(models);
 ReportModel.associate(models);
 // TaskModel.associate(models); // Temporarily disabled
+
+// Set up Member model associations
+MemberModel.associate(models);
 
 
 
@@ -115,5 +126,7 @@ module.exports = {
     Plan: PlanModel,
     Report: ReportModel,
     // Task: TaskModel, // Temporarily disabled
+    // Member Management model
+    Member: MemberModel,
     syncDatabase
 };

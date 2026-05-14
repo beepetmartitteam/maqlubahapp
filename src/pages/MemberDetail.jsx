@@ -1,5 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { memberAPI } from "../api/member";
 
 // Responsive hook for detecting mobile screens
 const useResponsive = () => {
@@ -110,17 +111,31 @@ function MemberDetail() {
       setLoading(true);
       setError(null);
       
-      // In production, this would call the API
-      const foundMember = SAMPLE_MEMBERS.find(m => m.id === parseInt(id));
+      const token = localStorage.getItem('token');
+      const response = await memberAPI.getMemberById(id, token);
       
+      if (response.success) {
+        setMember(response.data);
+      } else {
+        setError(response.error || 'Member not found');
+        // Fallback to sample data
+        const foundMember = SAMPLE_MEMBERS.find(m => m.id === parseInt(id));
+        if (foundMember) {
+          setMember(foundMember);
+        } else {
+          setError('Member not found');
+        }
+      }
+    } catch (err) {
+      console.error('Error fetching member:', err);
+      setError('Failed to fetch member details');
+      // Fallback to sample data
+      const foundMember = SAMPLE_MEMBERS.find(m => m.id === parseInt(id));
       if (foundMember) {
         setMember(foundMember);
       } else {
         setError('Member not found');
       }
-    } catch (err) {
-      console.error('Error fetching member:', err);
-      setError('Failed to fetch member details');
     } finally {
       setLoading(false);
     }
@@ -128,14 +143,28 @@ function MemberDetail() {
 
   const handleSaveMember = async () => {
     try {
-      // In production, this would call the API to save
-      console.log('Saving member:', member);
-      setEditMode(false);
-      // Update last updated timestamp
-      setMember({
-        ...member,
-        lastUpdated: new Date().toISOString().split('T')[0]
-      });
+      const token = localStorage.getItem('token');
+      const wivesNormalized = (member.wives ?? [])
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+      const payload = { ...member, wives: wivesNormalized };
+      const response = await memberAPI.updateMember(id, payload, token);
+      
+      if (response.success) {
+        setEditMode(false);
+        // Update with the returned data or update timestamp
+        if (response.data) {
+          setMember(response.data);
+        } else {
+          setMember({
+            ...member,
+            wives: wivesNormalized,
+            lastUpdated: new Date().toISOString().split('T')[0]
+          });
+        }
+      } else {
+        setError(response.error || 'Failed to save member');
+      }
     } catch (err) {
       console.error('Error saving member:', err);
       setError('Failed to save member');
@@ -250,7 +279,7 @@ function MemberDetail() {
             </button>
             <div>
               <h1 style={{ margin: 0, fontSize: isMobile ? "24px" : "32px", fontWeight: 600, color: "#333" }}>
-                {member.husbandName}
+               Detail
               </h1>
               <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>
                 Member Profile & Assessment Details
@@ -532,13 +561,100 @@ function MemberDetail() {
                       gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", 
                       gap: "16px" 
                     }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Wives
-                        </label>
-                        <div style={{ fontSize: "14px", color: "#333" }}>
-                          {member.wives.length > 0 ? member.wives.join(', ') : 'None'}
-                        </div>
+                      <div style={{ marginBottom: editMode ? "16px" : "0" }}>
+                        {editMode ? (
+                          <>
+                            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                              <label style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>
+                                Wives
+                              </label>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const wives = member.wives ?? [];
+                                  setMember({ ...member, wives: [...wives, ""] });
+                                }}
+                                style={{
+                                  backgroundColor: "#1976d2",
+                                  color: "white",
+                                  border: "none",
+                                  padding: "6px 12px",
+                                  borderRadius: "4px",
+                                  fontSize: "12px",
+                                  cursor: "pointer"
+                                }}
+                              >
+                                + Add Wife
+                              </button>
+                            </div>
+                            {(member.wives ?? []).length > 0 ? (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                                {member.wives.map((wife, index) => (
+                                  <div key={index} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                    <input
+                                      type="text"
+                                      value={wife}
+                                      onChange={(e) => {
+                                        const wives = [...(member.wives ?? [])];
+                                        wives[index] = e.target.value;
+                                        setMember({ ...member, wives });
+                                      }}
+                                      placeholder={`Wife ${index + 1} name`}
+                                      style={{
+                                        flex: 1,
+                                        padding: "8px 12px",
+                                        border: "1px solid #ddd",
+                                        borderRadius: "6px",
+                                        fontSize: "13px"
+                                      }}
+                                    />
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        const wives = (member.wives ?? []).filter((_, i) => i !== index);
+                                        setMember({ ...member, wives });
+                                      }}
+                                      style={{
+                                        backgroundColor: "#f44336",
+                                        color: "white",
+                                        border: "none",
+                                        padding: "8px 12px",
+                                        borderRadius: "6px",
+                                        fontSize: "12px",
+                                        cursor: "pointer"
+                                      }}
+                                    >
+                                      Remove
+                                    </button>
+                                  </div>
+                                ))}
+                              </div>
+                            ) : (
+                              <div style={{
+                                padding: "16px",
+                                backgroundColor: "#f8f9fa",
+                                borderRadius: "8px",
+                                border: "1px dashed #ccc",
+                                textAlign: "center",
+                                color: "#999",
+                                fontSize: "13px"
+                              }}>
+                                No wives added yet. Click "+ Add Wife" to add wife information.
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <>
+                            <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
+                              Wives
+                            </label>
+                            <div style={{ fontSize: "14px", color: "#333" }}>
+                              {(member.wives ?? []).filter(Boolean).length > 0
+                                ? (member.wives ?? []).filter(Boolean).join(', ')
+                                : 'None'}
+                            </div>
+                          </>
+                        )}
                       </div>
                       <div>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
@@ -718,144 +834,307 @@ function MemberDetail() {
                       gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", 
                       gap: "16px" 
                     }}>
+                      {/* Understanding of the Struggle */}
                       <div style={{ 
-                        padding: "16px", 
-                        backgroundColor: "#f8f9fa", 
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
+                        padding: "20px", 
+                        backgroundColor: editMode ? "#fff" : "#f8f9fa", 
+                        borderRadius: "12px",
+                        border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
+                        transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
                           Understanding of the Struggle
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <div style={{ 
-                            fontSize: "24px", 
-                            fontWeight: 700, 
-                            color: getAssessmentColor(member.struggleAssessment) 
-                          }}>
-                            {member.struggleAssessment}
+                        {editMode ? (
+                          <div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              value={member.struggleAssessment}
+                              onChange={(e) => setMember({...member, struggleAssessment: parseInt(e.target.value)})}
+                              style={{
+                                width: "100%",
+                                height: "8px",
+                                borderRadius: "4px",
+                                background: `linear-gradient(to right, #f44336 0%, #f44336 20%, #ff9800 20%, #ff9800 40%, #ffeb3b 40%, #ffeb3b 60%, #4caf50 60%, #4caf50 80%, #2196f3 80%, #2196f3 100%)`,
+                                outline: "none",
+                                cursor: "pointer"
+                              }}
+                            />
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                              {[1, 2, 3, 4, 5].map(num => (
+                                <span key={num} style={{ 
+                                  fontSize: "12px", 
+                                  color: member.struggleAssessment === num ? "#1976d2" : "#999",
+                                  fontWeight: member.struggleAssessment === num ? 600 : 400
+                                }}>{num}</span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ fontSize: "14px", color: "#666" }}>
-                            / 5 - {getAssessmentText(member.struggleAssessment)}
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <div style={{ 
+                              fontSize: "32px", 
+                              fontWeight: 700, 
+                              color: getAssessmentColor(member.struggleAssessment),
+                              minWidth: "60px"
+                            }}>
+                              {member.struggleAssessment}
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#666" }}>
+                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.struggleAssessment)}</span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
+                      {/* Family Management */}
                       <div style={{ 
-                        padding: "16px", 
-                        backgroundColor: "#f8f9fa", 
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
+                        padding: "20px", 
+                        backgroundColor: editMode ? "#fff" : "#f8f9fa", 
+                        borderRadius: "12px",
+                        border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
+                        transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
                           Family Management
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <div style={{ 
-                            fontSize: "24px", 
-                            fontWeight: 700, 
-                            color: getAssessmentColor(member.familyManagementAssessment) 
-                          }}>
-                            {member.familyManagementAssessment}
+                        {editMode ? (
+                          <div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              value={member.familyManagementAssessment}
+                              onChange={(e) => setMember({...member, familyManagementAssessment: parseInt(e.target.value)})}
+                              style={{
+                                width: "100%",
+                                height: "8px",
+                                borderRadius: "4px",
+                                background: `linear-gradient(to right, #f44336 0%, #f44336 20%, #ff9800 20%, #ff9800 40%, #ffeb3b 40%, #ffeb3b 60%, #4caf50 60%, #4caf50 80%, #2196f3 80%, #2196f3 100%)`,
+                                outline: "none",
+                                cursor: "pointer"
+                              }}
+                            />
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                              {[1, 2, 3, 4, 5].map(num => (
+                                <span key={num} style={{ 
+                                  fontSize: "12px", 
+                                  color: member.familyManagementAssessment === num ? "#1976d2" : "#999",
+                                  fontWeight: member.familyManagementAssessment === num ? 600 : 400
+                                }}>{num}</span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ fontSize: "14px", color: "#666" }}>
-                            / 5 - {getAssessmentText(member.familyManagementAssessment)}
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <div style={{ 
+                              fontSize: "32px", 
+                              fontWeight: 700, 
+                              color: getAssessmentColor(member.familyManagementAssessment),
+                              minWidth: "60px"
+                            }}>
+                              {member.familyManagementAssessment}
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#666" }}>
+                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.familyManagementAssessment)}</span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
+                      {/* Welfare Status */}
                       <div style={{ 
-                        padding: "16px", 
-                        backgroundColor: "#f8f9fa", 
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
+                        padding: "20px", 
+                        backgroundColor: editMode ? "#fff" : "#f8f9fa", 
+                        borderRadius: "12px",
+                        border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
+                        transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
                           Welfare Status
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <div style={{ 
-                            fontSize: "24px", 
-                            fontWeight: 700, 
-                            color: getAssessmentColor(member.welfareAssessment) 
-                          }}>
-                            {member.welfareAssessment}
+                        {editMode ? (
+                          <div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              value={member.welfareAssessment}
+                              onChange={(e) => setMember({...member, welfareAssessment: parseInt(e.target.value)})}
+                              style={{
+                                width: "100%",
+                                height: "8px",
+                                borderRadius: "4px",
+                                background: `linear-gradient(to right, #f44336 0%, #f44336 20%, #ff9800 20%, #ff9800 40%, #ffeb3b 40%, #ffeb3b 60%, #4caf50 60%, #4caf50 80%, #2196f3 80%, #2196f3 100%)`,
+                                outline: "none",
+                                cursor: "pointer"
+                              }}
+                            />
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                              {[1, 2, 3, 4, 5].map(num => (
+                                <span key={num} style={{ 
+                                  fontSize: "12px", 
+                                  color: member.welfareAssessment === num ? "#1976d2" : "#999",
+                                  fontWeight: member.welfareAssessment === num ? 600 : 400
+                                }}>{num}</span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ fontSize: "14px", color: "#666" }}>
-                            / 5 - {getAssessmentText(member.welfareAssessment)}
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <div style={{ 
+                              fontSize: "32px", 
+                              fontWeight: 700, 
+                              color: getAssessmentColor(member.welfareAssessment),
+                              minWidth: "60px"
+                            }}>
+                              {member.welfareAssessment}
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#666" }}>
+                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.welfareAssessment)}</span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
+                      {/* 5P Implementation */}
                       <div style={{ 
-                        padding: "16px", 
-                        backgroundColor: "#f8f9fa", 
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
+                        padding: "20px", 
+                        backgroundColor: editMode ? "#fff" : "#f8f9fa", 
+                        borderRadius: "12px",
+                        border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
+                        transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
                           5P Implementation
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <div style={{ 
-                            fontSize: "24px", 
-                            fontWeight: 700, 
-                            color: getAssessmentColor(member.fivePAssessment) 
-                          }}>
-                            {member.fivePAssessment}
+                        {editMode ? (
+                          <div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              value={member.fivePAssessment}
+                              onChange={(e) => setMember({...member, fivePAssessment: parseInt(e.target.value)})}
+                              style={{
+                                width: "100%",
+                                height: "8px",
+                                borderRadius: "4px",
+                                background: `linear-gradient(to right, #f44336 0%, #f44336 20%, #ff9800 20%, #ff9800 40%, #ffeb3b 40%, #ffeb3b 60%, #4caf50 60%, #4caf50 80%, #2196f3 80%, #2196f3 100%)`,
+                                outline: "none",
+                                cursor: "pointer"
+                              }}
+                            />
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                              {[1, 2, 3, 4, 5].map(num => (
+                                <span key={num} style={{ 
+                                  fontSize: "12px", 
+                                  color: member.fivePAssessment === num ? "#1976d2" : "#999",
+                                  fontWeight: member.fivePAssessment === num ? 600 : 400
+                                }}>{num}</span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ fontSize: "14px", color: "#666" }}>
-                            / 5 - {getAssessmentText(member.fivePAssessment)}
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <div style={{ 
+                              fontSize: "32px", 
+                              fontWeight: 700, 
+                              color: getAssessmentColor(member.fivePAssessment),
+                              minWidth: "60px"
+                            }}>
+                              {member.fivePAssessment}
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#666" }}>
+                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.fivePAssessment)}</span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
+                      {/* Compliance Level */}
                       <div style={{ 
-                        padding: "16px", 
-                        backgroundColor: "#f8f9fa", 
-                        borderRadius: "8px",
-                        border: "1px solid #e0e0e0"
+                        padding: "20px", 
+                        backgroundColor: editMode ? "#fff" : "#f8f9fa", 
+                        borderRadius: "12px",
+                        border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
+                        transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
                           Compliance Level
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-                          <div style={{ 
-                            fontSize: "24px", 
-                            fontWeight: 700, 
-                            color: getAssessmentColor(member.complianceAssessment) 
-                          }}>
-                            {member.complianceAssessment}
+                        {editMode ? (
+                          <div>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              value={member.complianceAssessment}
+                              onChange={(e) => setMember({...member, complianceAssessment: parseInt(e.target.value)})}
+                              style={{
+                                width: "100%",
+                                height: "8px",
+                                borderRadius: "4px",
+                                background: `linear-gradient(to right, #f44336 0%, #f44336 20%, #ff9800 20%, #ff9800 40%, #ffeb3b 40%, #ffeb3b 60%, #4caf50 60%, #4caf50 80%, #2196f3 80%, #2196f3 100%)`,
+                                outline: "none",
+                                cursor: "pointer"
+                              }}
+                            />
+                            <div style={{ display: "flex", justifyContent: "space-between", marginTop: "8px" }}>
+                              {[1, 2, 3, 4, 5].map(num => (
+                                <span key={num} style={{ 
+                                  fontSize: "12px", 
+                                  color: member.complianceAssessment === num ? "#1976d2" : "#999",
+                                  fontWeight: member.complianceAssessment === num ? 600 : 400
+                                }}>{num}</span>
+                              ))}
+                            </div>
                           </div>
-                          <div style={{ fontSize: "14px", color: "#666" }}>
-                            / 5 - {getAssessmentText(member.complianceAssessment)}
+                        ) : (
+                          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+                            <div style={{ 
+                              fontSize: "32px", 
+                              fontWeight: 700, 
+                              color: getAssessmentColor(member.complianceAssessment),
+                              minWidth: "60px"
+                            }}>
+                              {member.complianceAssessment}
+                            </div>
+                            <div style={{ fontSize: "14px", color: "#666" }}>
+                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.complianceAssessment)}</span>
+                            </div>
                           </div>
-                        </div>
+                        )}
                       </div>
 
+                      {/* Overall Score */}
                       <div style={{ 
-                        padding: "16px", 
-                        backgroundColor: "#e3f2fd", 
-                        borderRadius: "8px",
-                        border: "1px solid #2196f3"
+                        padding: "20px", 
+                        backgroundColor: editMode ? "#e3f2fd" : "#e3f2fd", 
+                        borderRadius: "12px",
+                        border: editMode ? "2px solid #2196f3" : "1px solid #2196f3",
+                        transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "8px" }}>
+                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
                           Overall Score
                         </div>
-                        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           <div style={{ 
-                            fontSize: "24px", 
+                            fontSize: "32px", 
                             fontWeight: 700, 
                             color: getAssessmentColor(
                               Math.round((member.struggleAssessment + member.familyManagementAssessment + member.welfareAssessment + member.fivePAssessment + member.complianceAssessment) / 5)
-                            ) 
+                            ),
+                            minWidth: "60px"
                           }}>
                             {Math.round((member.struggleAssessment + member.familyManagementAssessment + member.welfareAssessment + member.fivePAssessment + member.complianceAssessment) / 5)}
                           </div>
                           <div style={{ fontSize: "14px", color: "#666" }}>
-                            / 5 - {getAssessmentText(
+                            / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(
                               Math.round((member.struggleAssessment + member.familyManagementAssessment + member.welfareAssessment + member.fivePAssessment + member.complianceAssessment) / 5)
-                            )}
+                            )}</span>
                           </div>
                         </div>
                       </div>

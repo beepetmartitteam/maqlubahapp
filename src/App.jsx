@@ -20,6 +20,7 @@ import CompanyManagementStaffList from './pages/CompanyManagementStaffList';
 import CompanyManagementPlanList from './pages/CompanyManagementPlanList';
 import MembersList from './pages/MembersList';
 import MemberDetail from './pages/MemberDetail';
+import MemberAddPage from './pages/MemberAddPage';
 
 function App() {
   return (
@@ -50,6 +51,7 @@ function App() {
 
           {/* Members Management Routes */}
           <Route path="/members" element={<MembersList />} />
+          <Route path="/members/add" element={<MemberAddPage />} />
           <Route path="/member-detail/:id" element={<MemberDetail />} />
 
           <Route path="*" element={<div>Route not found</div>} />

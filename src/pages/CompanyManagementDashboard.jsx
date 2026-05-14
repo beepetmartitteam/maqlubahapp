@@ -212,6 +212,21 @@ const CompanyManagementDashboard = () => {
               Real-time overview of all companies, strategic plans, and comprehensive performance metrics
             </p>
             <div style={{ display: "flex", gap: "16px", marginTop: "16px" }}>
+                 <button
+            onClick={() => navigate('/home')}
+            style={{
+              backgroundColor: "transparent",
+              color: "white",
+              border: "1px solid rgba(255,255,255,0.3)",
+              padding: "12px 30px",
+              borderRadius: "8px",
+              fontSize: "14px",
+              fontWeight: 500,
+              cursor: "pointer"
+            }}
+          >
+            ← 
+          </button>
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
                 <div style={{
                   width: "8px",
@@ -230,7 +245,7 @@ const CompanyManagementDashboard = () => {
               </div>
             </div>
           </div>
-          
+       
         </div>
       </header>
       
