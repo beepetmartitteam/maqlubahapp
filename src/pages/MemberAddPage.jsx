@@ -30,6 +30,24 @@ const emptyForm = () => ({
   status: "active",
 });
 
+const MALAYSIA_STATE_OPTIONS = [
+  "PERLIS",
+  "KEDAH",
+  "P. PINANG",
+  "PERAK",
+  "SELANGOR",
+  "WP KL / PJ",
+  "WP LABUAN",
+  "NEGERI SEMBILAN",
+  "MELAKA",
+  "JOHOR",
+  "PAHANG",
+  "TERENGGANU",
+  "KELANTAN",
+  "SABAH",
+  "SARAWAK",
+];
+
 function MemberAddPage() {
   const { isMobile } = useResponsive();
   const navigate = useNavigate();
@@ -41,7 +59,7 @@ function MemberAddPage() {
 
   const handleSubmit = async () => {
     if (!form.husbandName.trim() || !form.phone.trim()) {
-      setError("Name and phone are required.");
+      setError("Nama suami dan no. telefon wajib diisi.");
       return;
     }
     setError(null);
@@ -80,11 +98,11 @@ function MemberAddPage() {
           navigate("/members");
         }
       } else {
-        setError(response.error || "Failed to add member");
+        setError(response.error || "Gagal mendaftar ahli");
       }
     } catch (err) {
       console.error("Error adding member:", err);
-      setError("Failed to add member");
+      setError("Gagal mendaftar ahli");
     } finally {
       setSaving(false);
     }
@@ -125,13 +143,13 @@ function MemberAddPage() {
                 cursor: "pointer",
               }}
             >
-              ← Back
+              ← Kembali
             </button>
             <div>
               <h1 style={{ margin: 0, fontSize: isMobile ? "22px" : "28px", fontWeight: 600, color: "#333" }}>
-                Add New Member
+                Daftar ahli baharu
               </h1>
-              <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>Create a member profile</p>
+              <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>Isi maklumat asas profil ahli</p>
             </div>
           </div>
         </div>
@@ -165,13 +183,13 @@ function MemberAddPage() {
           <div style={grid2}>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Name *
+                Nama suami *
               </label>
               <input
                 type="text"
                 value={form.husbandName}
                 onChange={(e) => setForm({ ...form, husbandName: e.target.value })}
-                placeholder="Enter name"
+                placeholder="Masukkan nama penuh"
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -184,13 +202,13 @@ function MemberAddPage() {
             </div>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Age
+                Umur
               </label>
               <input
                 type="number"
                 value={form.age}
                 onChange={(e) => setForm({ ...form, age: e.target.value })}
-                placeholder="Enter age"
+                placeholder="Umur (tahun)"
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -206,13 +224,13 @@ function MemberAddPage() {
           <div style={grid2}>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Phone *
+                No. telefon *
               </label>
               <input
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
-                placeholder="Enter phone number"
+                placeholder="Contoh: +60123456789"
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -225,13 +243,13 @@ function MemberAddPage() {
             </div>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                District
+                Daerah
               </label>
               <input
                 type="text"
                 value={form.district}
                 onChange={(e) => setForm({ ...form, district: e.target.value })}
-                placeholder="Enter district"
+                placeholder="Masukkan daerah"
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -246,13 +264,13 @@ function MemberAddPage() {
 
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-              Home Address
+              Alamat rumah
             </label>
             <input
               type="text"
               value={form.homeAddress}
               onChange={(e) => setForm({ ...form, homeAddress: e.target.value })}
-              placeholder="Enter home address"
+              placeholder="Alamat penuh"
               style={{
                 width: "100%",
                 padding: "12px",
@@ -267,7 +285,7 @@ function MemberAddPage() {
           <div style={grid2}>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                State
+                Negeri
               </label>
               <select
                 value={form.state}
@@ -281,23 +299,21 @@ function MemberAddPage() {
                   boxSizing: "border-box",
                 }}
               >
-                <option value="">Select State</option>
-                <option value="Selangor">Selangor</option>
-                <option value="Wilayah Persekutuan">Wilayah Persekutuan</option>
-                <option value="Kuala Lumpur">Kuala Lumpur</option>
-                <option value="Johor">Johor</option>
-                <option value="Perak">Perak</option>
+                <option value="">— Pilih negeri —</option>
+                {MALAYSIA_STATE_OPTIONS.map((negeri) => (
+                  <option key={negeri} value={negeri}>{negeri}</option>
+                ))}
               </select>
             </div>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Current Job
+                Pekerjaan sekarang
               </label>
               <input
                 type="text"
                 value={form.currentJob}
                 onChange={(e) => setForm({ ...form, currentJob: e.target.value })}
-                placeholder="Enter current job"
+                placeholder="Jawatan atau pekerjaan"
                 style={{
                   width: "100%",
                   padding: "12px",
@@ -312,13 +328,13 @@ function MemberAddPage() {
 
           <div style={{ marginBottom: "16px" }}>
             <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-              Company Name
+              Nama syarikat perniagaan / enterprise
             </label>
             <input
               type="text"
               value={form.companyName}
               onChange={(e) => setForm({ ...form, companyName: e.target.value })}
-              placeholder="Enter company/business name"
+              placeholder="Nama syarikat atau perniagaan"
               style={{
                 width: "100%",
                 padding: "12px",
@@ -333,7 +349,7 @@ function MemberAddPage() {
           <div style={grid2}>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Married Children
+                Bil. anak (sudah berkahwin)
               </label>
               <input
                 type="number"
@@ -353,7 +369,7 @@ function MemberAddPage() {
             </div>
             <div>
               <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                Unmarried Children
+                Bil. anak (belum berkahwin)
               </label>
               <input
                 type="number"
@@ -375,7 +391,7 @@ function MemberAddPage() {
 
           <div style={{ marginBottom: "24px" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
-              <label style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>Wives</label>
+              <label style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>Nama isteri</label>
               <button
                 type="button"
                 onClick={() => {
@@ -392,7 +408,7 @@ function MemberAddPage() {
                   cursor: "pointer",
                 }}
               >
-                + Add Wife
+                + Tambah isteri
               </button>
             </div>
 
@@ -408,7 +424,7 @@ function MemberAddPage() {
                         wives[index] = e.target.value;
                         setForm({ ...form, wives });
                       }}
-                      placeholder={`Wife ${index + 1} name`}
+                      placeholder={`Nama isteri ${index + 1}`}
                       style={{
                         flex: 1,
                         padding: "8px 12px",
@@ -433,7 +449,7 @@ function MemberAddPage() {
                         cursor: "pointer",
                       }}
                     >
-                      Remove
+                      Buang
                     </button>
                   </div>
                 ))}
@@ -450,7 +466,7 @@ function MemberAddPage() {
                   fontSize: "13px",
                 }}
               >
-                No wives added yet. Click "+ Add Wife" to add wife information.
+                Tiada rekod isteri. Klik &quot;+ Tambah isteri&quot; untuk mengisi.
               </div>
             )}
           </div>
@@ -469,7 +485,7 @@ function MemberAddPage() {
                 cursor: "pointer",
               }}
             >
-              Cancel
+              Batal
             </button>
             <button
               type="button"
@@ -485,7 +501,7 @@ function MemberAddPage() {
                 cursor: saving ? "not-allowed" : "pointer",
               }}
             >
-              {saving ? "Saving…" : "Add Member"}
+              {saving ? "Menyimpan…" : "Daftar ahli"}
             </button>
           </div>
         </div>
