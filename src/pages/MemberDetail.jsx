@@ -117,24 +117,24 @@ function MemberDetail() {
       if (response.success) {
         setMember(response.data);
       } else {
-        setError(response.error || 'Member not found');
+        setError(response.error || "Ahli tidak dijumpai");
         // Fallback to sample data
         const foundMember = SAMPLE_MEMBERS.find(m => m.id === parseInt(id));
         if (foundMember) {
           setMember(foundMember);
         } else {
-          setError('Member not found');
+          setError("Ahli tidak dijumpai");
         }
       }
     } catch (err) {
       console.error('Error fetching member:', err);
-      setError('Failed to fetch member details');
+      setError("Gagal memuatkan butiran ahli");
       // Fallback to sample data
       const foundMember = SAMPLE_MEMBERS.find(m => m.id === parseInt(id));
       if (foundMember) {
         setMember(foundMember);
       } else {
-        setError('Member not found');
+        setError("Ahli tidak dijumpai");
       }
     } finally {
       setLoading(false);
@@ -147,7 +147,17 @@ function MemberDetail() {
       const wivesNormalized = (member.wives ?? [])
         .map((s) => String(s).trim())
         .filter(Boolean);
-      const payload = { ...member, wives: wivesNormalized };
+      const fivePActivitiesNormalized = (member.fivePActivities ?? [])
+        .map((s) => String(s).trim())
+        .filter(Boolean);
+      const payload = {
+        ...member,
+        wives: wivesNormalized,
+        fivePActivities: fivePActivitiesNormalized,
+        age: parseInt(member.age, 10) || 0,
+        marriedChildren: parseInt(member.marriedChildren, 10) || 0,
+        unmarriedChildren: parseInt(member.unmarriedChildren, 10) || 0,
+      };
       const response = await memberAPI.updateMember(id, payload, token);
       
       if (response.success) {
@@ -158,16 +168,16 @@ function MemberDetail() {
         } else {
           setMember({
             ...member,
-            wives: wivesNormalized,
+            ...payload,
             lastUpdated: new Date().toISOString().split('T')[0]
           });
         }
       } else {
-        setError(response.error || 'Failed to save member');
+        setError(response.error || "Gagal menyimpan");
       }
     } catch (err) {
       console.error('Error saving member:', err);
-      setError('Failed to save member');
+      setError("Gagal menyimpan");
     }
   };
 
@@ -178,19 +188,27 @@ function MemberDetail() {
   };
 
   const getAssessmentText = (score) => {
-    if (score === 5) return "Excellent";
-    if (score === 4) return "Good";
-    if (score === 3) return "Average";
-    if (score === 2) return "Below Average";
-    return "Poor";
+    if (score === 5) return "Terbaik";
+    if (score === 4) return "Baik";
+    if (score === 3) return "Sederhana";
+    if (score === 2) return "Lemah";
+    return "Paling tidak baik";
   };
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-MY', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric'
+    if (!dateString) return "—";
+    return new Date(dateString).toLocaleDateString("ms-MY", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
     });
+  };
+
+  const statusLabelMs = (status) => {
+    if (status === "active") return "Aktif";
+    if (status === "inactive") return "Tidak aktif";
+    if (status === "pending") return "Menunggu";
+    return status || "—";
   };
 
   if (loading) {
@@ -205,7 +223,7 @@ function MemberDetail() {
       }}>
         <div style={{ textAlign: "center" }}>
           <div style={{ fontSize: "48px", marginBottom: "16px" }}>⏳</div>
-          <div style={{ fontSize: "18px", color: "#666" }}>Loading member details...</div>
+          <div style={{ fontSize: "18px", color: "#666" }}>Memuatkan butiran ahli…</div>
         </div>
       </div>
     );
@@ -224,7 +242,7 @@ function MemberDetail() {
         <div style={{ textAlign: "center", padding: "48px" }}>
           <div style={{ fontSize: "48px", marginBottom: "16px" }}>❌</div>
           <div style={{ fontSize: "18px", color: "#666", marginBottom: "16px" }}>
-            {error || 'Member not found'}
+            {error || "Ahli tidak dijumpai"}
           </div>
           <button
             onClick={() => navigate('/members')}
@@ -238,7 +256,7 @@ function MemberDetail() {
               cursor: "pointer"
             }}
           >
-            Back to Members
+            Kembali ke senarai ahli
           </button>
         </div>
       </div>
@@ -275,14 +293,14 @@ function MemberDetail() {
                 cursor: "pointer"
               }}
             >
-              ← Back
+              ← Kembali
             </button>
             <div>
               <h1 style={{ margin: 0, fontSize: isMobile ? "24px" : "32px", fontWeight: 600, color: "#333" }}>
-               Detail
+                {member.husbandName}
               </h1>
               <p style={{ margin: "8px 0 0 0", fontSize: "14px", color: "#666" }}>
-                Member Profile & Assessment Details
+                MAKLUMAT BANCIAN
               </p>
             </div>
           </div>
@@ -299,7 +317,7 @@ function MemberDetail() {
                 cursor: "pointer"
               }}
             >
-              {editMode ? "Cancel" : "Edit"}
+              {editMode ? "Batal" : "Ubah"}
             </button>
             {editMode && (
               <button
@@ -314,7 +332,7 @@ function MemberDetail() {
                   cursor: "pointer"
                 }}
               >
-                Save
+                Simpan
               </button>
             )}
           </div>
@@ -334,9 +352,9 @@ function MemberDetail() {
               borderRadius: "20px",
               fontSize: "14px",
               fontWeight: 500,
-              textTransform: "capitalize"
+              textTransform: "none"
             }}>
-              {member.status} Member
+              {statusLabelMs(member.status)}
             </span>
           </div>
 
@@ -361,10 +379,10 @@ function MemberDetail() {
                     fontSize: "14px",
                     fontWeight: 500,
                     cursor: "pointer",
-                    textTransform: "capitalize"
+                    textTransform: "none"
                   }}
                 >
-                  {tab === 'profile' ? '👤 Profile' : tab === 'life' ? '🏠 Life Info' : '📊 Assessment'}
+                  {tab === 'profile' ? '📋 Profail' : tab === 'life' ? '🏠 Kehidupan' : '📊 Penilaian'}
                 </button>
               ))}
             </div>
@@ -372,28 +390,27 @@ function MemberDetail() {
             {/* Tab Content */}
             <div style={{ padding: "24px" }}>
               
-              {/* Profile Tab */}
+              {/* Bahagian A — Profil ahli */}
               {activeTab === 'profile' && (
                 <div style={{ display: "grid", gap: "24px" }}>
-                  {/* Basic Info */}
                   <div>
                     <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      📋 Basic Information
+                      BAHAGIAN A (PROFAIL AHLI)
                     </h3>
-                    <div style={{ 
-                      display: "grid", 
-                      gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", 
-                      gap: "16px" 
+                    <div style={{
+                      display: "grid",
+                      gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)",
+                      gap: "16px"
                     }}>
                       <div>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Husband Name
+                          1. NAMA SUAMI
                         </label>
                         {editMode ? (
                           <input
                             type="text"
                             value={member.husbandName}
-                            onChange={(e) => setMember({...member, husbandName: e.target.value})}
+                            onChange={(e) => setMember({ ...member, husbandName: e.target.value })}
                             style={{
                               width: "100%",
                               padding: "8px",
@@ -408,13 +425,13 @@ function MemberDetail() {
                       </div>
                       <div>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Age
+                          2. UMUR
                         </label>
                         {editMode ? (
                           <input
                             type="number"
                             value={member.age}
-                            onChange={(e) => setMember({...member, age: e.target.value})}
+                            onChange={(e) => setMember({ ...member, age: e.target.value })}
                             style={{
                               width: "100%",
                               padding: "8px",
@@ -424,18 +441,18 @@ function MemberDetail() {
                             }}
                           />
                         ) : (
-                          <div style={{ fontSize: "14px", color: "#333" }}>{member.age} years</div>
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.age != null ? `${member.age} tahun` : "—"}</div>
                         )}
                       </div>
                       <div>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Phone
+                          3. NO. TEL
                         </label>
                         {editMode ? (
                           <input
                             type="tel"
                             value={member.phone}
-                            onChange={(e) => setMember({...member, phone: e.target.value})}
+                            onChange={(e) => setMember({ ...member, phone: e.target.value })}
                             style={{
                               width: "100%",
                               padding: "8px",
@@ -448,49 +465,15 @@ function MemberDetail() {
                           <div style={{ fontSize: "14px", color: "#333" }}>{member.phone}</div>
                         )}
                       </div>
-                      <div>
+                      <div style={{ gridColumn: isMobile ? "auto" : "1 / -1" }}>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Current Job
-                        </label>
-                        {editMode ? (
-                          <input
-                            type="text"
-                            value={member.currentJob}
-                            onChange={(e) => setMember({...member, currentJob: e.target.value})}
-                            style={{
-                              width: "100%",
-                              padding: "8px",
-                              border: "1px solid #ddd",
-                              borderRadius: "4px",
-                              fontSize: "14px"
-                            }}
-                          />
-                        ) : (
-                          <div style={{ fontSize: "14px", color: "#333" }}>{member.currentJob}</div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Address */}
-                  <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      📍 Address Information
-                    </h3>
-                    <div style={{ 
-                      display: "grid", 
-                      gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", 
-                      gap: "16px" 
-                    }}>
-                      <div>
-                        <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Home Address
+                          4. ALAMAT RUMAH
                         </label>
                         {editMode ? (
                           <input
                             type="text"
                             value={member.homeAddress}
-                            onChange={(e) => setMember({...member, homeAddress: e.target.value})}
+                            onChange={(e) => setMember({ ...member, homeAddress: e.target.value })}
                             style={{
                               width: "100%",
                               padding: "8px",
@@ -500,18 +483,18 @@ function MemberDetail() {
                             }}
                           />
                         ) : (
-                          <div style={{ fontSize: "14px", color: "#333" }}>{member.homeAddress}</div>
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.homeAddress || "—"}</div>
                         )}
                       </div>
                       <div>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          District
+                          5. DAERAH
                         </label>
                         {editMode ? (
                           <input
                             type="text"
                             value={member.district}
-                            onChange={(e) => setMember({...member, district: e.target.value})}
+                            onChange={(e) => setMember({ ...member, district: e.target.value })}
                             style={{
                               width: "100%",
                               padding: "8px",
@@ -521,17 +504,17 @@ function MemberDetail() {
                             }}
                           />
                         ) : (
-                          <div style={{ fontSize: "14px", color: "#333" }}>{member.district}</div>
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.district || "—"}</div>
                         )}
                       </div>
                       <div>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          State
+                          6. NEGERI
                         </label>
                         {editMode ? (
                           <select
                             value={member.state}
-                            onChange={(e) => setMember({...member, state: e.target.value})}
+                            onChange={(e) => setMember({ ...member, state: e.target.value })}
                             style={{
                               width: "100%",
                               padding: "8px",
@@ -540,33 +523,24 @@ function MemberDetail() {
                               fontSize: "14px"
                             }}
                           >
+                            <option value="">— Pilih negeri —</option>
                             <option value="Selangor">Selangor</option>
                             <option value="Wilayah Persekutuan">Wilayah Persekutuan</option>
                             <option value="Kuala Lumpur">Kuala Lumpur</option>
+                            <option value="Johor">Johor</option>
+                            <option value="Perak">Perak</option>
                           </select>
                         ) : (
-                          <div style={{ fontSize: "14px", color: "#333" }}>{member.state}</div>
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.state || "—"}</div>
                         )}
                       </div>
-                    </div>
-                  </div>
 
-                  {/* Family */}
-                  <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      👨‍👩‍👧‍👦 Family Information
-                    </h3>
-                    <div style={{ 
-                      display: "grid", 
-                      gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", 
-                      gap: "16px" 
-                    }}>
-                      <div style={{ marginBottom: editMode ? "16px" : "0" }}>
+                      <div style={{ gridColumn: isMobile ? "auto" : "1 / -1", marginBottom: editMode ? "16px" : "0" }}>
                         {editMode ? (
                           <>
                             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
                               <label style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>
-                                Wives
+                                Nama isteri (boleh lebih daripada satu)
                               </label>
                               <button
                                 type="button"
@@ -584,13 +558,16 @@ function MemberDetail() {
                                   cursor: "pointer"
                                 }}
                               >
-                                + Add Wife
+                                + Tambah isteri
                               </button>
                             </div>
                             {(member.wives ?? []).length > 0 ? (
                               <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
                                 {member.wives.map((wife, index) => (
                                   <div key={index} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                    <label style={{ fontSize: "12px", color: "#666", minWidth: "120px", flexShrink: 0 }}>
+                                      NAMA ISTERI ({index + 1})
+                                    </label>
                                     <input
                                       type="text"
                                       value={wife}
@@ -599,7 +576,7 @@ function MemberDetail() {
                                         wives[index] = e.target.value;
                                         setMember({ ...member, wives });
                                       }}
-                                      placeholder={`Wife ${index + 1} name`}
+                                      placeholder={`Nama isteri ${index + 1}`}
                                       style={{
                                         flex: 1,
                                         padding: "8px 12px",
@@ -624,7 +601,7 @@ function MemberDetail() {
                                         cursor: "pointer"
                                       }}
                                     >
-                                      Remove
+                                      Buang
                                     </button>
                                   </div>
                                 ))}
@@ -639,44 +616,36 @@ function MemberDetail() {
                                 color: "#999",
                                 fontSize: "13px"
                               }}>
-                                No wives added yet. Click "+ Add Wife" to add wife information.
+                                Tiada rekod isteri. Klik &quot;+ Tambah isteri&quot; untuk mengisi.
                               </div>
                             )}
                           </>
                         ) : (
                           <>
                             <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                              Wives
+                              NAMA ISTERI (1) – (4) / seterusnya
                             </label>
                             <div style={{ fontSize: "14px", color: "#333" }}>
                               {(member.wives ?? []).filter(Boolean).length > 0
-                                ? (member.wives ?? []).filter(Boolean).join(', ')
-                                : 'None'}
+                                ? (member.wives ?? []).filter(Boolean).map((w, i) => (
+                                    <div key={i} style={{ marginBottom: "4px" }}>NAMA ISTERI ({i + 1}): {w}</div>
+                                  ))
+                                : "Tiada"}
                             </div>
                           </>
                         )}
                       </div>
+
                       <div>
                         <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Married Children
-                        </label>
-                        <div style={{ fontSize: "14px", color: "#333" }}>{member.marriedChildren}</div>
-                      </div>
-                      <div>
-                        <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Unmarried Children
-                        </label>
-                        <div style={{ fontSize: "14px", color: "#333" }}>{member.unmarriedChildren}</div>
-                      </div>
-                      <div>
-                        <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
-                          Company Name
+                          7. BIL. ANAK (SUDAH BERKAHWIN)
                         </label>
                         {editMode ? (
                           <input
-                            type="text"
-                            value={member.companyName}
-                            onChange={(e) => setMember({...member, companyName: e.target.value})}
+                            type="number"
+                            min="0"
+                            value={member.marriedChildren}
+                            onChange={(e) => setMember({ ...member, marriedChildren: e.target.value })}
                             style={{
                               width: "100%",
                               padding: "8px",
@@ -686,7 +655,71 @@ function MemberDetail() {
                             }}
                           />
                         ) : (
-                          <div style={{ fontSize: "14px", color: "#333" }}>{member.companyName}</div>
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.marriedChildren ?? "—"}</div>
+                        )}
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
+                          8. BIL. ANAK (BELUM BERKAHWIN)
+                        </label>
+                        {editMode ? (
+                          <input
+                            type="number"
+                            min="0"
+                            value={member.unmarriedChildren}
+                            onChange={(e) => setMember({ ...member, unmarriedChildren: e.target.value })}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              fontSize: "14px"
+                            }}
+                          />
+                        ) : (
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.unmarriedChildren ?? "—"}</div>
+                        )}
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
+                          9. PEKERJAAN SEKARANG
+                        </label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            value={member.currentJob}
+                            onChange={(e) => setMember({ ...member, currentJob: e.target.value })}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              fontSize: "14px"
+                            }}
+                          />
+                        ) : (
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.currentJob || "—"}</div>
+                        )}
+                      </div>
+                      <div>
+                        <label style={{ display: "block", fontSize: "12px", color: "#666", marginBottom: "4px" }}>
+                          10. NAMA SYARIKAT PERNIAGAAN / ENTERPRISE
+                        </label>
+                        {editMode ? (
+                          <input
+                            type="text"
+                            value={member.companyName}
+                            onChange={(e) => setMember({ ...member, companyName: e.target.value })}
+                            style={{
+                              width: "100%",
+                              padding: "8px",
+                              border: "1px solid #ddd",
+                              borderRadius: "4px",
+                              fontSize: "14px"
+                            }}
+                          />
+                        ) : (
+                          <div style={{ fontSize: "14px", color: "#333" }}>{member.companyName || "—"}</div>
                         )}
                       </div>
                     </div>
@@ -694,17 +727,24 @@ function MemberDetail() {
                 </div>
               )}
 
-              {/* Life Info Tab */}
+              {/* Bahagian B — Maklumat kehidupan */}
               {activeTab === 'life' && (
                 <div style={{ display: "grid", gap: "24px" }}>
+                  <h3 style={{ margin: 0, fontSize: "18px", fontWeight: 600, color: "#333" }}>
+                    BAHAGIAN B (MAKLUMAT TTG KEHIDUPAN)
+                  </h3>
+
                   <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      🎯 Understanding of the Struggle 
-                    </h3>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "15px", fontWeight: 600, color: "#333" }}>
+                      1. Kefahaman tentang perjuangan
+                    </h4>
+                    <p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+                      Adakah perjuangan masih ada / mencari kebenaran / masih hendakkan J atau tidak / RM.
+                    </p>
                     {editMode ? (
                       <textarea
                         value={member.struggleUnderstanding}
-                        onChange={(e) => setMember({...member, struggleUnderstanding: e.target.value})}
+                        onChange={(e) => setMember({ ...member, struggleUnderstanding: e.target.value })}
                         rows={4}
                         style={{
                           width: "100%",
@@ -717,19 +757,22 @@ function MemberDetail() {
                       />
                     ) : (
                       <p style={{ fontSize: "14px", color: "#333", lineHeight: 1.6 }}>
-                        {member.struggleUnderstanding}
+                        {member.struggleUnderstanding || "—"}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      👨‍👩‍👧‍👦 Family Situation
-                    </h3>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "15px", fontWeight: 600, color: "#333" }}>
+                      2. Kekeluargaan
+                    </h4>
+                    <p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+                      Bagaimana proses baiki diri, keluarga / di mana anak-anak / pendidikan anak-anak bagaimana.
+                    </p>
                     {editMode ? (
                       <textarea
                         value={member.familySituation}
-                        onChange={(e) => setMember({...member, familySituation: e.target.value})}
+                        onChange={(e) => setMember({ ...member, familySituation: e.target.value })}
                         rows={4}
                         style={{
                           width: "100%",
@@ -742,19 +785,22 @@ function MemberDetail() {
                       />
                     ) : (
                       <p style={{ fontSize: "14px", color: "#333", lineHeight: 1.6 }}>
-                        {member.familySituation}
+                        {member.familySituation || "—"}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      🏠 Welfare Status
-                    </h3>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "15px", fontWeight: 600, color: "#333" }}>
+                      3. Kebajikan
+                    </h4>
+                    <p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+                      Bagaimana keadaan rumah / makan minum / sakit pening / hutang-hutang berkaitan GISBH sebelum ops G.
+                    </p>
                     {editMode ? (
                       <textarea
                         value={member.welfareStatus}
-                        onChange={(e) => setMember({...member, welfareStatus: e.target.value})}
+                        onChange={(e) => setMember({ ...member, welfareStatus: e.target.value })}
                         rows={4}
                         style={{
                           width: "100%",
@@ -767,42 +813,135 @@ function MemberDetail() {
                       />
                     ) : (
                       <p style={{ fontSize: "14px", color: "#333", lineHeight: 1.6 }}>
-                        {member.welfareStatus}
+                        {member.welfareStatus || "—"}
                       </p>
                     )}
                   </div>
 
                   <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      💼 5P Activities
-                    </h3>
-                    <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                      {member.fivePActivities.map((activity, index) => (
-                        <span
-                          key={index}
-                          style={{
-                            backgroundColor: "#e3f2fd",
-                            color: "#1976d2",
-                            padding: "6px 12px",
-                            borderRadius: "16px",
-                            fontSize: "12px",
-                            fontWeight: 500
-                          }}
-                        >
-                          {activity}
-                        </span>
-                      ))}
-                    </div>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "15px", fontWeight: 600, color: "#333" }}>
+                      4. 5P
+                    </h4>
+                    <p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+                      Perniagaan / pertanian / penternakan (ayam) / perikanan / taugeh.
+                    </p>
+                    {editMode ? (
+                      <div style={{ marginBottom: "16px" }}>
+                        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "8px" }}>
+                          <label style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>
+                            Senarai aktiviti 5P
+                          </label>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const fivePActivities = member.fivePActivities ?? [];
+                              setMember({ ...member, fivePActivities: [...fivePActivities, ""] });
+                            }}
+                            style={{
+                              backgroundColor: "#1976d2",
+                              color: "white",
+                              border: "none",
+                              padding: "6px 12px",
+                              borderRadius: "4px",
+                              fontSize: "12px",
+                              cursor: "pointer"
+                            }}
+                          >
+                            + Tambah aktiviti
+                          </button>
+                        </div>
+                        {(member.fivePActivities ?? []).length > 0 ? (
+                          <div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+                            {(member.fivePActivities ?? []).map((activity, index) => (
+                              <div key={index} style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                                <input
+                                  type="text"
+                                  value={activity}
+                                  onChange={(e) => {
+                                    const fivePActivities = [...(member.fivePActivities ?? [])];
+                                    fivePActivities[index] = e.target.value;
+                                    setMember({ ...member, fivePActivities });
+                                  }}
+                                  placeholder={`Aktiviti ${index + 1}`}
+                                  style={{
+                                    flex: 1,
+                                    padding: "8px 12px",
+                                    border: "1px solid #ddd",
+                                    borderRadius: "6px",
+                                    fontSize: "13px"
+                                  }}
+                                />
+                                <button
+                                  type="button"
+                                  onClick={() => {
+                                    const fivePActivities = (member.fivePActivities ?? []).filter((_, i) => i !== index);
+                                    setMember({ ...member, fivePActivities });
+                                  }}
+                                  style={{
+                                    backgroundColor: "#f44336",
+                                    color: "white",
+                                    border: "none",
+                                    padding: "8px 12px",
+                                    borderRadius: "6px",
+                                    fontSize: "12px",
+                                    cursor: "pointer"
+                                  }}
+                                >
+                                  Buang
+                                </button>
+                              </div>
+                            ))}
+                          </div>
+                        ) : (
+                          <div style={{
+                            padding: "16px",
+                            backgroundColor: "#f8f9fa",
+                            borderRadius: "8px",
+                            border: "1px dashed #ccc",
+                            textAlign: "center",
+                            color: "#999",
+                            fontSize: "13px"
+                          }}>
+                            Tiada aktiviti. Klik &quot;+ Tambah aktiviti&quot;.
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
+                        {(member.fivePActivities ?? []).filter(Boolean).length > 0 ? (
+                          (member.fivePActivities ?? []).filter(Boolean).map((activity, index) => (
+                            <span
+                              key={index}
+                              style={{
+                                backgroundColor: "#e3f2fd",
+                                color: "#1976d2",
+                                padding: "6px 12px",
+                                borderRadius: "16px",
+                                fontSize: "12px",
+                                fontWeight: 500
+                              }}
+                            >
+                              {activity}
+                            </span>
+                          ))
+                        ) : (
+                          <span style={{ fontSize: "14px", color: "#666" }}>Tiada</span>
+                        )}
+                      </div>
+                    )}
                   </div>
 
                   <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      📖 Compliance Level
-                    </h3>
+                    <h4 style={{ margin: "0 0 8px 0", fontSize: "15px", fontWeight: 600, color: "#333" }}>
+                      5. Pematuhan
+                    </h4>
+                    <p style={{ margin: "0 0 12px 0", fontSize: "12px", color: "#666", lineHeight: 1.5 }}>
+                      Bagaimana kefahaman tentang pematuhan fatwa / pematuhan perniagaan / lain-lain hasrat kerajaan kepada bekas GISBH.
+                    </p>
                     {editMode ? (
                       <textarea
                         value={member.complianceLevel}
-                        onChange={(e) => setMember({...member, complianceLevel: e.target.value})}
+                        onChange={(e) => setMember({ ...member, complianceLevel: e.target.value })}
                         rows={4}
                         style={{
                           width: "100%",
@@ -815,20 +954,26 @@ function MemberDetail() {
                       />
                     ) : (
                       <p style={{ fontSize: "14px", color: "#333", lineHeight: 1.6 }}>
-                        {member.complianceLevel}
+                        {member.complianceLevel || "—"}
                       </p>
                     )}
                   </div>
                 </div>
               )}
 
-              {/* Assessment Tab */}
+              {/* Bahagian C — Penilaian */}
               {activeTab === 'assessment' && (
                 <div style={{ display: "grid", gap: "24px" }}>
                   <div>
-                    <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      📊 Assessment Scores (1-5 Scale)
+                    <h3 style={{ margin: "0 0 8px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
+                      BAHAGIAN C (UNTUK PENILAIAN)
                     </h3>
+                    <p style={{ margin: "0 0 16px 0", fontSize: "14px", color: "#555", lineHeight: 1.6 }}>
+                      Diberi penilaian turutan <strong>5 (terbaik)</strong> hingga <strong>1 (paling tidak baik)</strong>.
+                    </p>
+                    <h4 style={{ margin: "0 0 16px 0", fontSize: "15px", fontWeight: 600, color: "#333" }}>
+                      Skor penilaian (1–5)
+                    </h4>
                     <div style={{ 
                       display: "grid", 
                       gridTemplateColumns: isMobile ? "1fr" : "repeat(2, 1fr)", 
@@ -842,8 +987,8 @@ function MemberDetail() {
                         border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
-                          Understanding of the Struggle
+                        <div style={{ fontSize: "13px", color: "#666", marginBottom: "12px", fontWeight: 500, lineHeight: 1.4 }}>
+                          1. Hal kefahaman tentang perjuangan di era kini
                         </div>
                         {editMode ? (
                           <div>
@@ -883,7 +1028,7 @@ function MemberDetail() {
                               {member.struggleAssessment}
                             </div>
                             <div style={{ fontSize: "14px", color: "#666" }}>
-                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.struggleAssessment)}</span>
+                              / 5 — <span style={{ fontWeight: 500 }}>{getAssessmentText(member.struggleAssessment)}</span>
                             </div>
                           </div>
                         )}
@@ -897,8 +1042,8 @@ function MemberDetail() {
                         border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
-                          Family Management
+                        <div style={{ fontSize: "13px", color: "#666", marginBottom: "12px", fontWeight: 500, lineHeight: 1.4 }}>
+                          2. Menguruskan kekeluargaan mengikut Islam cara hidup
                         </div>
                         {editMode ? (
                           <div>
@@ -938,7 +1083,7 @@ function MemberDetail() {
                               {member.familyManagementAssessment}
                             </div>
                             <div style={{ fontSize: "14px", color: "#666" }}>
-                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.familyManagementAssessment)}</span>
+                              / 5 — <span style={{ fontWeight: 500 }}>{getAssessmentText(member.familyManagementAssessment)}</span>
                             </div>
                           </div>
                         )}
@@ -952,8 +1097,8 @@ function MemberDetail() {
                         border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
-                          Welfare Status
+                        <div style={{ fontSize: "13px", color: "#666", marginBottom: "12px", fontWeight: 500, lineHeight: 1.4 }}>
+                          3. Kebajikan, keperluan keluarga selesai
                         </div>
                         {editMode ? (
                           <div>
@@ -993,7 +1138,7 @@ function MemberDetail() {
                               {member.welfareAssessment}
                             </div>
                             <div style={{ fontSize: "14px", color: "#666" }}>
-                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.welfareAssessment)}</span>
+                              / 5 — <span style={{ fontWeight: 500 }}>{getAssessmentText(member.welfareAssessment)}</span>
                             </div>
                           </div>
                         )}
@@ -1007,8 +1152,8 @@ function MemberDetail() {
                         border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
-                          5P Implementation
+                        <div style={{ fontSize: "13px", color: "#666", marginBottom: "12px", fontWeight: 500, lineHeight: 1.4 }}>
+                          4. Kefahaman dan perlaksanaan 5P
                         </div>
                         {editMode ? (
                           <div>
@@ -1048,7 +1193,7 @@ function MemberDetail() {
                               {member.fivePAssessment}
                             </div>
                             <div style={{ fontSize: "14px", color: "#666" }}>
-                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.fivePAssessment)}</span>
+                              / 5 — <span style={{ fontWeight: 500 }}>{getAssessmentText(member.fivePAssessment)}</span>
                             </div>
                           </div>
                         )}
@@ -1062,8 +1207,8 @@ function MemberDetail() {
                         border: editMode ? "2px solid #1976d2" : "1px solid #e0e0e0",
                         transition: "all 0.3s ease"
                       }}>
-                        <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
-                          Compliance Level
+                        <div style={{ fontSize: "13px", color: "#666", marginBottom: "12px", fontWeight: 500, lineHeight: 1.4 }}>
+                          5. Kefahaman tentang fatwa, pematuhan undang-undang dll.
                         </div>
                         {editMode ? (
                           <div>
@@ -1103,7 +1248,7 @@ function MemberDetail() {
                               {member.complianceAssessment}
                             </div>
                             <div style={{ fontSize: "14px", color: "#666" }}>
-                              / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(member.complianceAssessment)}</span>
+                              / 5 — <span style={{ fontWeight: 500 }}>{getAssessmentText(member.complianceAssessment)}</span>
                             </div>
                           </div>
                         )}
@@ -1118,7 +1263,7 @@ function MemberDetail() {
                         transition: "all 0.3s ease"
                       }}>
                         <div style={{ fontSize: "14px", color: "#666", marginBottom: "12px", fontWeight: 500 }}>
-                          Overall Score
+                          Purata keseluruhan
                         </div>
                         <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
                           <div style={{ 
@@ -1132,7 +1277,7 @@ function MemberDetail() {
                             {Math.round((member.struggleAssessment + member.familyManagementAssessment + member.welfareAssessment + member.fivePAssessment + member.complianceAssessment) / 5)}
                           </div>
                           <div style={{ fontSize: "14px", color: "#666" }}>
-                            / 5 - <span style={{ fontWeight: 500 }}>{getAssessmentText(
+                            / 5 — <span style={{ fontWeight: 500 }}>{getAssessmentText(
                               Math.round((member.struggleAssessment + member.familyManagementAssessment + member.welfareAssessment + member.fivePAssessment + member.complianceAssessment) / 5)
                             )}</span>
                           </div>
@@ -1143,7 +1288,7 @@ function MemberDetail() {
 
                   <div>
                     <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
-                      📝 Summary Assessment
+                      6. Rumusan (teks bebas)
                     </h3>
                     {editMode ? (
                       <textarea
@@ -1161,7 +1306,7 @@ function MemberDetail() {
                       />
                     ) : (
                       <p style={{ fontSize: "14px", color: "#333", lineHeight: 1.6 }}>
-                        {member.summary}
+                        {member.summary || "—"}
                       </p>
                     )}
                   </div>
@@ -1182,10 +1327,10 @@ function MemberDetail() {
             color: "#666"
           }}>
             <div>
-              Member ID: {member.id}
+              ID ahli: {member.id}
             </div>
             <div>
-              Joined: {formatDate(member.joinDate)} | Last Updated: {formatDate(member.lastUpdated)}
+              Tarikh sertai: {formatDate(member.joinDate)} | Kemaskini terakhir: {formatDate(member.lastUpdated)}
             </div>
           </div>
         </div>
