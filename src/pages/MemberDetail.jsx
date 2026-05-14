@@ -92,6 +92,25 @@ const SAMPLE_MEMBERS = [
   }
 ];
 
+/** Senarai negeri/wilayah untuk medan NEGERI (bancian) */
+const MALAYSIA_STATE_OPTIONS = [
+  "PERLIS",
+  "KEDAH",
+  "P. PINANG",
+  "PERAK",
+  "SELANGOR",
+  "WP KL / PJ",
+  "WP LABUAN",
+  "NEGERI SEMBILAN",
+  "MELAKA",
+  "JOHOR",
+  "PAHANG",
+  "TERENGGANU",
+  "KELANTAN",
+  "SABAH",
+  "SARAWAK",
+];
+
 function MemberDetail() {
   const { isMobile } = useResponsive();
   const { id } = useParams();
@@ -513,7 +532,11 @@ function MemberDetail() {
                         </label>
                         {editMode ? (
                           <select
-                            value={member.state}
+                            value={
+                              member.state && !MALAYSIA_STATE_OPTIONS.includes(member.state)
+                                ? member.state
+                                : (member.state || "")
+                            }
                             onChange={(e) => setMember({ ...member, state: e.target.value })}
                             style={{
                               width: "100%",
@@ -524,11 +547,9 @@ function MemberDetail() {
                             }}
                           >
                             <option value="">— Pilih negeri —</option>
-                            <option value="Selangor">Selangor</option>
-                            <option value="Wilayah Persekutuan">Wilayah Persekutuan</option>
-                            <option value="Kuala Lumpur">Kuala Lumpur</option>
-                            <option value="Johor">Johor</option>
-                            <option value="Perak">Perak</option>
+                            {MALAYSIA_STATE_OPTIONS.map((negeri) => (
+                              <option key={negeri} value={negeri}>{negeri}</option>
+                            ))}
                           </select>
                         ) : (
                           <div style={{ fontSize: "14px", color: "#333" }}>{member.state || "—"}</div>
