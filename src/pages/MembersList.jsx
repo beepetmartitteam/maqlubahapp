@@ -1,25 +1,37 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { memberAPI } from "../api/member";
 
-// Responsive hook for detecting mobile screens
 const useResponsive = () => {
   const [isMobile, setIsMobile] = useState(false);
-  const [screenWidth, setScreenWidth] = useState(window.innerWidth);
-
   useEffect(() => {
-    const handleResize = () => {
-      const width = window.innerWidth;
-      setScreenWidth(width);
-      setIsMobile(width < 768);
-    };
-
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
     handleResize();
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
+  return { isMobile };
+};
 
-  return { isMobile, screenWidth };
+/* ─── Design Tokens ─────────────────────────────────────── */
+const T = {
+  bg:        "#F7F8FA",
+  surface:   "#FFFFFF",
+  border:    "#EAEDF2",
+  text:      "#0F1117",
+  muted:     "#6B7280",
+  accent:    "#2563EB",
+  accentSoft:"#EFF4FF",
+  success:   "#16A34A",
+  successBg: "#F0FDF4",
+  warn:      "#D97706",
+  warnBg:    "#FFFBEB",
+  danger:    "#DC2626",
+  dangerBg:  "#FEF2F2",
+  radius:    "12px",
+  radiusSm:  "8px",
+  shadow:    "0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04)",
+  shadowMd:  "0 4px 12px rgba(0,0,0,.08)",
 };
 
 const INITIAL_MEMBERS = [
@@ -190,6 +202,159 @@ const INITIAL_MEMBERS = [
   }
 ];
 
+const scoreColor = (s) => (s >= 4 ? T.success : s >= 3 ? T.warn : T.danger);
+const scoreBg = (s) => (s >= 4 ? T.successBg : s >= 3 ? T.warnBg : T.dangerBg);
+const fmtDate = (d) =>
+  d
+    ? new Date(d).toLocaleDateString("ms-MY", {
+        day: "numeric",
+        month: "short",
+        year: "numeric",
+      })
+    : "—";
+const statusMs = (s) => ({ active: "Aktif", inactive: "Tidak aktif", pending: "Menunggu" }[s] ?? s ?? "—");
+
+const Input = ({ value, onChange, type = "text", ...rest }) => (
+  <input
+    type={type}
+    value={value ?? ""}
+    onChange={onChange}
+    style={{
+      width: "100%",
+      padding: "9px 12px",
+      border: `1.5px solid ${T.border}`,
+      borderRadius: T.radiusSm,
+      fontSize: "14px",
+      color: T.text,
+      background: "#fff",
+      outline: "none",
+      boxSizing: "border-box",
+      transition: "border-color .15s",
+    }}
+    onFocus={(e) => (e.target.style.borderColor = T.accent)}
+    onBlur={(e) => (e.target.style.borderColor = T.border)}
+    {...rest}
+  />
+);
+
+const Select = ({ value, onChange, children }) => (
+  <select
+    value={value ?? ""}
+    onChange={onChange}
+    style={{
+      width: "100%",
+      padding: "9px 12px",
+      border: `1.5px solid ${T.border}`,
+      borderRadius: T.radiusSm,
+      fontSize: "14px",
+      color: T.text,
+      background: "#fff",
+      outline: "none",
+      boxSizing: "border-box",
+      appearance: "auto",
+    }}
+  >
+    {children}
+  </select>
+);
+
+const Btn = ({ children, onClick, variant = "primary", size = "md", style: extra = {}, disabled }) => {
+  const base = {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    border: "none",
+    cursor: disabled ? "not-allowed" : "pointer",
+    fontFamily: "inherit",
+    fontWeight: 500,
+    borderRadius: T.radiusSm,
+    transition: "all .15s",
+    opacity: disabled ? 0.6 : 1,
+    ...extra,
+  };
+  const sizes = {
+    sm: { padding: "6px 12px", fontSize: "13px" },
+    md: { padding: "9px 18px", fontSize: "14px" },
+  };
+  const variants = {
+    primary: { background: T.accent, color: "#fff" },
+    ghost: { background: "transparent", color: T.muted, border: `1.5px solid ${T.border}` },
+    orange: { background: T.warnBg, color: T.warn, border: "1.5px solid #FDE68A" },
+  };
+  return (
+    <button onClick={onClick} style={{ ...base, ...sizes[size], ...variants[variant] }} disabled={disabled}>
+      {children}
+    </button>
+  );
+};
+
+const ScoreRing = ({ score }) => {
+  const r = 18;
+  const circ = 2 * Math.PI * r;
+  const pct = (score / 5) * circ;
+  const col = scoreColor(score);
+  return (
+    <svg width="52" height="52" style={{ flexShrink: 0 }}>
+      <circle cx="26" cy="26" r={r} fill="none" stroke={T.border} strokeWidth="4" />
+      <circle
+        cx="26"
+        cy="26"
+        r={r}
+        fill="none"
+        stroke={col}
+        strokeWidth="4"
+        strokeDasharray={`${pct} ${circ}`}
+        strokeLinecap="round"
+        transform="rotate(-90 26 26)"
+        style={{ transition: "stroke-dasharray .4s ease" }}
+      />
+      <text x="26" y="31" textAnchor="middle" fontSize="13" fontWeight="700" fill={col}>
+        {score}
+      </text>
+    </svg>
+  );
+};
+
+const EmptyState = ({ title, desc, actionLabel, onAction }) => (
+  <div
+    style={{
+      textAlign: "center",
+      padding: "40px 24px",
+      background: T.surface,
+      borderRadius: T.radius,
+      border: `1px solid ${T.border}`,
+      boxShadow: T.shadow,
+    }}
+  >
+    <div style={{ width: 64, height: 64, background: T.bg, borderRadius: "50%", margin: "0 auto 14px", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 26 }}>
+      👥
+    </div>
+    <div style={{ fontSize: "16px", color: T.text, fontWeight: 700, marginBottom: 8 }}>{title}</div>
+    {desc ? <div style={{ fontSize: "14px", color: T.muted, marginBottom: 18 }}>{desc}</div> : null}
+    {actionLabel ? <Btn onClick={onAction}>{actionLabel}</Btn> : null}
+  </div>
+);
+
+const LoadingBlock = ({ text = "Memuatkan…" }) => (
+  <div style={{ padding: 28, display: "flex", alignItems: "center", justifyContent: "center" }}>
+    <div style={{ textAlign: "center" }}>
+      <div
+        style={{
+          width: 42,
+          height: 42,
+          border: `3px solid ${T.border}`,
+          borderTopColor: T.accent,
+          borderRadius: "50%",
+          margin: "0 auto 14px",
+          animation: "spin 0.8s linear infinite",
+        }}
+      />
+      <style>{`@keyframes spin{to{transform:rotate(360deg)}}`}</style>
+      <div style={{ color: T.muted, fontSize: "14px" }}>{text}</div>
+    </div>
+  </div>
+);
+
 function MembersList() {
   const { isMobile } = useResponsive();
   const [members, setMembers] = useState([]);
@@ -198,70 +363,39 @@ function MembersList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterState, setFilterState] = useState("");
   const [filterStatus, setFilterStatus] = useState("");
+  const [hoveredId, setHoveredId] = useState(null);
   const navigate = useNavigate();
 
-  // Fetch members from API
-  useEffect(() => {
-    fetchMembers();
-  }, []);
-
-  const fetchMembers = async () => {
+  const fetchMembers = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
-      const token = localStorage.getItem('token');
+      const token = localStorage.getItem("token");
       const response = await memberAPI.getMembers(token);
       
       if (response.success) {
         setMembers(response.data);
       } else {
         setError(response.error || "Gagal memuatkan senarai ahli");
-        // Fallback to initial data
         setMembers(INITIAL_MEMBERS);
       }
-    } catch (err) {
-      console.error('Error fetching members:', err);
+    } catch {
       setError("Gagal menyambung ke pelayan");
-      // Fallback to initial data
       setMembers(INITIAL_MEMBERS);
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const t = setTimeout(() => {
+      fetchMembers();
+    }, 0);
+    return () => clearTimeout(t);
+  }, [fetchMembers]);
 
   const handleMemberClick = (member) => {
     navigate(`/member-detail/${member.id}`);
-  };
-
-  const getStatusColor = (status) => {
-    switch (status) {
-      case "active": return "#4caf50";
-      case "inactive": return "#f44336";
-      case "pending": return "#ff9800";
-      default: return "#9e9e9e";
-    }
-  };
-
-  const getAssessmentColor = (score) => {
-    if (score >= 4) return "#4caf50";
-    if (score >= 3) return "#ff9800";
-    return "#f44336";
-  };
-
-  const formatDate = (dateString) => {
-    if (!dateString) return "—";
-    return new Date(dateString).toLocaleDateString("ms-MY", {
-      day: "numeric",
-      month: "short",
-      year: "numeric",
-    });
-  };
-
-  const statusLabelMs = (status) => {
-    if (status === "active") return "Aktif";
-    if (status === "inactive") return "Tidak aktif";
-    if (status === "pending") return "Menunggu";
-    return status || "—";
   };
 
   // Filter members based on search and filters
@@ -279,557 +413,309 @@ function MembersList() {
     return matchesSearch && matchesState && matchesStatus;
   });
 
+  const stateOptions = useMemo(() => {
+    const set = new Set((members ?? []).map((m) => m.state).filter(Boolean));
+    return Array.from(set).sort((a, b) => String(a).localeCompare(String(b)));
+  }, [members]);
+
+  const stats = useMemo(() => {
+    const total = members.length;
+    const active = members.filter((m) => m.status === "active").length;
+    const kids = members.reduce((acc, m) => acc + ((m.marriedChildren ?? 0) + (m.unmarriedChildren ?? 0)), 0);
+    const states = new Set(members.map((m) => m.state).filter(Boolean)).size;
+    return { total, active, kids, states };
+  }, [members]);
+
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "#f8f9fa", fontFamily: "'DM Sans', sans-serif" }}>
-      
-      {/* Header */}
-      <div style={{ 
-        backgroundColor: "white", 
-        padding: isMobile ? "16px" : "24px", 
-        borderBottom: "1px solid #e0e0e0",
-        boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-      }}>
-        <div style={{ 
-          display: "flex", 
-          justifyContent: "space-between", 
-          alignItems: "center",
-          maxWidth: "1200px",
-          margin: "0 auto"
-        }}>
-          
-          <div>
-            
-            <h1 style={{ margin: 0, fontSize: isMobile ? "24px" : "32px", fontWeight: 600, color: "#333" }}>
-              Pengurusan Ahli
-            </h1>
-            <p style={{ margin: "16px 0 0 0", fontSize: "14px", color: "#666" }}>
-              Urus profil ahli dan maklumat keahlian
-            </p>
+    <div style={{ minHeight: "100vh", background: T.bg, fontFamily: "'Geist', 'Inter', sans-serif" }}>
+      <div style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, position: "sticky", top: 0, zIndex: 100 }}>
+        <div
+          style={{
+            maxWidth: 1100,
+            margin: "0 auto",
+            padding: isMobile ? "0 16px" : "0 32px",
+            height: 60,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            gap: 12,
+          }}
+        >
+          <div style={{ minWidth: 0 }}>
+            <div style={{ fontSize: "15px", fontWeight: 700, color: T.text }}>Pengurusan Ahli</div>
+            {!isMobile ? <div style={{ fontSize: "11px", color: T.muted, letterSpacing: "0.04em" }}>URUS PROFIL AHLI & MAKLUMAT KEAHLIAN</div> : null}
           </div>
-          <div style={{ display: "flex", gap: "12px" }}>
-            <button
-              onClick={() => navigate('/home')}
-              style={{
-                backgroundColor: "transparent",
-                color: "#666",
-                border: "1px solid #ddd",
-                padding: "12px 30px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: 500,
-                cursor: "pointer"
-              }}
-            >
-              ← 
-            </button>
-            <button
-              onClick={() => navigate('/members/add')}
-              style={{
-                backgroundColor: "#1976d2",
-                color: "white",
-                border: "none",
-                padding: "12px 24px",
-                borderRadius: "8px",
-                fontSize: "14px",
-                fontWeight: 500,
-                cursor: "pointer"
-              }}
-            >
+          <div style={{ display: "flex", gap: 8, flexShrink: 0 }}>
+            <Btn variant="ghost" size="sm" onClick={() => navigate("/home")}>
+              ← Kembali
+            </Btn>
+            <Btn size="sm" onClick={() => navigate("/members/add")}>
               + Daftar ahli
-            </button>
+            </Btn>
           </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div style={{ 
-        height: isMobile ? "calc(100vh - 120px)" : "calc(100vh - 73px)",
-        overflowY: "auto", 
-        backgroundColor: "#f8f9fa" 
-      }}>
-        <div style={{ padding: isMobile ? "16px" : "24px" }}>
-          
-          {/* Error Message */}
-          {error && (
-            <div style={{
-              backgroundColor: "#fff3cd",
-              border: "1px solid #ffeaa7",
-              borderRadius: "8px",
-              padding: "16px",
-              marginBottom: "16px",
-              color: "#856404"
-            }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>{error}</span>
-                <button
-                  onClick={fetchMembers}
-                  style={{
-                    backgroundColor: "#856404",
-                    color: "white",
-                    border: "none",
-                    padding: "4px 8px",
-                    borderRadius: "4px",
-                    fontSize: "12px",
-                    cursor: "pointer"
-                  }}
-                >
-                  Cuba lagi
-                </button>
+      <div style={{ maxWidth: 1100, margin: "0 auto", padding: isMobile ? "24px 16px" : "32px 32px" }}>
+        {error ? (
+          <div
+            style={{
+              background: T.warnBg,
+              border: "1px solid #FDE68A",
+              borderRadius: T.radius,
+              padding: "14px 16px",
+              boxShadow: T.shadow,
+              marginBottom: 16,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              gap: 12,
+              flexWrap: "wrap",
+            }}
+          >
+            <div style={{ color: T.warn, fontSize: "14px", fontWeight: 600 }}>{error}</div>
+            <Btn variant="orange" size="sm" onClick={fetchMembers} disabled={loading}>
+              {loading ? "Memuatkan…" : "Cuba lagi"}
+            </Btn>
+          </div>
+        ) : null}
+
+        <div
+          style={{
+            background: T.surface,
+            borderRadius: T.radius,
+            border: `1px solid ${T.border}`,
+            boxShadow: T.shadow,
+            padding: isMobile ? "18px" : "22px",
+            marginBottom: 16,
+          }}
+        >
+          <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "1.2fr 0.9fr 0.9fr", gap: 14 }}>
+            <div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: T.muted, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                Carian
               </div>
+              <Input value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} placeholder="Nama, telefon, pekerjaan…" />
             </div>
-          )}
-
-          {/* Filters and Search */}
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: isMobile ? "8px" : "12px",
-            padding: isMobile ? "16px" : "24px",
-            marginBottom: isMobile ? "16px" : "24px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-          }}>
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fit, minmax(250px, 1fr))", 
-              gap: "16px" 
-            }}>
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Cari ahli
-                </label>
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Cari mengikut nama, telefon atau pekerjaan…"
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                />
+            <div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: T.muted, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                Negeri
               </div>
-              
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Negeri
-                </label>
-                <select
-                  value={filterState}
-                  onChange={(e) => setFilterState(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                >
-                  <option value="">Semua negeri</option>
-                  <option value="Selangor">Selangor</option>
-                  <option value="Wilayah Persekutuan">Wilayah Persekutuan</option>
-                  <option value="Kuala Lumpur">Kuala Lumpur</option>
-                  <option value="Johor">Johor</option>
-                  <option value="Perak">Perak</option>
-                </select>
+              <Select value={filterState} onChange={(e) => setFilterState(e.target.value)}>
+                <option value="">Semua negeri</option>
+                {stateOptions.map((s) => (
+                  <option key={s} value={s}>
+                    {s}
+                  </option>
+                ))}
+              </Select>
+            </div>
+            <div>
+              <div style={{ fontSize: "11px", fontWeight: 700, color: T.muted, letterSpacing: "0.06em", textTransform: "uppercase", marginBottom: 6 }}>
+                Status
               </div>
-
-              <div>
-                <label style={{ display: "block", fontSize: "14px", fontWeight: 500, color: "#333", marginBottom: "8px" }}>
-                  Status
-                </label>
-                <select
-                  value={filterStatus}
-                  onChange={(e) => setFilterStatus(e.target.value)}
-                  style={{
-                    width: "100%",
-                    padding: "12px",
-                    border: "1px solid #ddd",
-                    borderRadius: "6px",
-                    fontSize: "14px"
-                  }}
-                >
-                  <option value="">Semua status</option>
-                  <option value="active">Aktif</option>
-                  <option value="inactive">Tidak aktif</option>
-                  <option value="pending">Menunggu</option>
-                </select>
-              </div>
+              <Select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+                <option value="">Semua status</option>
+                <option value="active">Aktif</option>
+                <option value="inactive">Tidak aktif</option>
+                <option value="pending">Menunggu</option>
+              </Select>
             </div>
           </div>
+        </div>
 
-          {/* Members Stats */}
-          <div style={{
-            backgroundColor: "white",
-            borderRadius: isMobile ? "8px" : "12px",
-            padding: isMobile ? "16px" : "24px",
-            marginBottom: isMobile ? "16px" : "24px",
-            boxShadow: "0 2px 4px rgba(0,0,0,0.1)"
-          }}>
-            <h2 style={{ 
-              margin: "0 0 16px 0", 
-              fontSize: isMobile ? "18px" : "20px", 
-              fontWeight: 600, 
-              color: "#333" 
-            }}>
-              Ringkasan ahli
-            </h2>
-            <div style={{ 
-              display: "grid", 
-              gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", 
-              gap: "16px" 
-            }}>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#1976d2" }}>
-                  {members.length}
-                </div>
-                <div style={{ fontSize: "14px", color: "#666" }}>Jumlah ahli</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#4caf50" }}>
-                  {members.filter(m => m.status === 'active').length}
-                </div>
-                <div style={{ fontSize: "14px", color: "#666" }}>Ahli aktif</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#ff9800" }}>
-                  {members.reduce((acc, m) => acc + ((m.marriedChildren ?? 0) + (m.unmarriedChildren ?? 0)), 0)}
-                </div>
-                <div style={{ fontSize: "14px", color: "#666" }}>Jumlah anak</div>
-              </div>
-              <div style={{ textAlign: "center" }}>
-                <div style={{ fontSize: "24px", fontWeight: 700, color: "#9c27b0" }}>
-                  {new Set(members.map(m => m.state)).size}
-                </div>
-                <div style={{ fontSize: "14px", color: "#666" }}>Bilangan negeri</div>
-              </div>
+        <div
+          style={{
+            background: T.surface,
+            borderRadius: T.radius,
+            border: `1px solid ${T.border}`,
+            boxShadow: T.shadow,
+            padding: isMobile ? "18px" : "22px",
+            marginBottom: 18,
+          }}
+        >
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12, flexWrap: "wrap" }}>
+            <div style={{ fontSize: "14px", fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "0.07em" }}>Ringkasan</div>
+            <div style={{ fontSize: "12px", color: T.muted }}>
+              Dikemas kini: {members.length ? fmtDate(new Date().toISOString()) : "—"}
             </div>
           </div>
+          <div style={{ marginTop: 14, display: "grid", gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : "repeat(4, 1fr)", gap: 14 }}>
+            {[
+              { label: "Jumlah ahli", value: stats.total, color: T.accent },
+              { label: "Ahli aktif", value: stats.active, color: T.success },
+              { label: "Jumlah anak", value: stats.kids, color: T.warn },
+              { label: "Bilangan negeri", value: stats.states, color: T.text },
+            ].map((s) => (
+              <div key={s.label} style={{ padding: "14px 12px", background: T.bg, borderRadius: T.radiusSm, border: `1px solid ${T.border}` }}>
+                <div style={{ fontSize: "18px", fontWeight: 800, color: s.color }}>{s.value}</div>
+                <div style={{ fontSize: "12px", color: T.muted, marginTop: 2 }}>{s.label}</div>
+              </div>
+            ))}
+          </div>
+        </div>
 
-          {/* Member Cards Grid */}
-          <div style={{ 
-            display: "grid", 
-            gridTemplateColumns: isMobile ? "1fr" : "repeat(auto-fill, minmax(400px, 1fr))", 
-            gap: isMobile ? "16px" : "24px" 
-          }}>
-            {loading ? (
-              // Loading skeleton
-              Array.from({ length: 3 }).map((_, index) => (
-                <div
-                  key={`skeleton-${index}`}
-                  style={{
-                    backgroundColor: "white",
-                    borderRadius: isMobile ? "8px" : "12px",
-                    padding: isMobile ? "16px" : "24px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
-                    border: "1px solid #e0e0e0"
-                  }}
-                >
-                  <div style={{ marginBottom: "16px" }}>
-                    <div style={{
-                      height: "20px",
-                      backgroundColor: "#e0e0e0",
-                      borderRadius: "4px",
-                      marginBottom: "8px"
-                    }}></div>
-                    <div style={{
-                      height: "14px",
-                      backgroundColor: "#e0e0e0",
-                      borderRadius: "4px",
-                      width: "60%"
-                    }}></div>
-                  </div>
-                  <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "repeat(2, 1fr)", 
-                    gap: "12px", 
-                    marginBottom: "16px" 
-                  }}>
-                    {[1, 2, 3, 4].map(i => (
-                      <div key={i}>
-                        <div style={{
-                          height: "12px",
-                          backgroundColor: "#e0e0e0",
-                          borderRadius: "4px",
-                          marginBottom: "4px"
-                        }}></div>
-                        <div style={{
-                          height: "20px",
-                          backgroundColor: "#e0e0e0",
-                          borderRadius: "4px"
-                        }}></div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))
-            ) : (
-              filteredMembers.map(member => (
+        <div style={{ display: "grid", gridTemplateColumns: isMobile ? "1fr" : "repeat(2, minmax(0, 1fr))", gap: 16 }}>
+          {loading ? (
+            <div style={{ gridColumn: "1 / -1" }}>
+              <LoadingBlock text="Memuatkan senarai ahli…" />
+            </div>
+          ) : (
+            filteredMembers.map((member) => {
+              const avg = Math.round(
+                ((member.struggleAssessment ?? 0) +
+                  (member.familyManagementAssessment ?? 0) +
+                  (member.welfareAssessment ?? 0) +
+                  (member.fivePAssessment ?? 0) +
+                  (member.complianceAssessment ?? 0)) /
+                  5
+              );
+              const hovered = hoveredId === member.id;
+              const statusVariant =
+                member.status === "active"
+                  ? { bg: T.successBg, color: T.success, border: "#BBF7D0" }
+                  : member.status === "pending"
+                    ? { bg: T.warnBg, color: T.warn, border: "#FDE68A" }
+                    : { bg: T.dangerBg, color: T.danger, border: "#FECACA" };
+
+              return (
                 <div
                   key={member.id}
                   onClick={() => handleMemberClick(member)}
+                  onMouseEnter={() => setHoveredId(member.id)}
+                  onMouseLeave={() => setHoveredId(null)}
                   style={{
-                    backgroundColor: "white",
-                    borderRadius: isMobile ? "8px" : "12px",
-                    padding: isMobile ? "16px" : "24px",
-                    boxShadow: "0 2px 8px rgba(0,0,0,0.1)",
+                    background: T.surface,
+                    borderRadius: T.radius,
+                    border: `1px solid ${T.border}`,
+                    boxShadow: hovered ? T.shadowMd : T.shadow,
+                    padding: isMobile ? "18px" : "20px",
                     cursor: "pointer",
-                    transition: "all 0.3s ease",
-                    border: "1px solid #e0e0e0",
                     position: "relative",
-                    overflow: "hidden"
+                    overflow: "hidden",
+                    transition: "box-shadow .15s, transform .15s",
+                    transform: hovered ? "translateY(-1px)" : "translateY(0)",
                   }}
                 >
-                  {/* Member Header */}
-                  <div style={{ marginBottom: "16px" }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "8px" }}>
-                      <h3 style={{ 
-                        margin: 0, 
-                        fontSize: "18px", 
-                        fontWeight: 600, 
-                        color: "#333",
-                        wordBreak: "break-word",
-                        flex: 1,
-                        marginRight: "12px"
-                      }}>
-                        {member.husbandName}
-                      </h3>
-                      <span style={{
-                        backgroundColor: getStatusColor(member.status),
-                        color: "white",
-                        padding: "4px 8px",
-                        borderRadius: "4px",
-                        fontSize: "11px",
-                        fontWeight: 500,
-                        textTransform: "none"
-                      }}>
-                        {statusLabelMs(member.status)}
-                      </span>
-                    </div>
-                    <p style={{ 
-                      margin: 0, 
-                      fontSize: "14px", 
-                      color: "#666",
-                      lineHeight: 1.5
-                    }}>
-                      {member.currentJob || "—"} • {member.companyName || "—"}
-                    </p>
-                  </div>
-
-                  {/* Member Stats */}
-                  <div style={{ 
-                    display: "grid", 
-                    gridTemplateColumns: "repeat(2, 1fr)", 
-                    gap: "12px", 
-                    marginBottom: "16px" 
-                  }}>
-                    <div>
-                      <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Umur</div>
-                      <div style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>
-                        {member.age != null ? `${member.age} tahun` : "—"}
+                  <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 12 }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", marginBottom: 4 }}>
+                        <div style={{ fontSize: "16px", fontWeight: 800, color: T.text, lineHeight: 1.2, wordBreak: "break-word" }}>
+                          {member.husbandName || "—"}
+                        </div>
+                        <span
+                          style={{
+                            padding: "3px 10px",
+                            borderRadius: 99,
+                            fontSize: "12px",
+                            fontWeight: 700,
+                            background: statusVariant.bg,
+                            color: statusVariant.color,
+                            border: `1px solid ${statusVariant.border}`,
+                          }}
+                        >
+                          {statusMs(member.status)}
+                        </span>
+                      </div>
+                      <div style={{ display: "flex", gap: 14, flexWrap: "wrap" }}>
+                        {[member.currentJob, [member.district, member.state].filter(Boolean).join(", "), member.phone]
+                          .filter(Boolean)
+                          .map((v, i) => (
+                            <span key={i} style={{ fontSize: "13px", color: T.muted }}>
+                              {v}
+                            </span>
+                          ))}
                       </div>
                     </div>
-                    <div>
-                      <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Lokasi</div>
-                      <div style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>
-                        {[member.district, member.state].filter(Boolean).join(", ") || "—"}
+
+                    <div style={{ display: "flex", alignItems: "center", gap: 10, flexShrink: 0 }}>
+                      <ScoreRing score={avg} />
+                      {!isMobile ? (
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontSize: "12px", color: T.muted, fontWeight: 700, letterSpacing: "0.06em", textTransform: "uppercase" }}>Purata</div>
+                          <div style={{ fontSize: "16px", fontWeight: 800, color: scoreColor(avg) }}>{avg}/5</div>
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 12, marginTop: 16 }}>
+                    {[
+                      { label: "Umur", value: member.age != null ? `${member.age} thn` : "—" },
+                      { label: "Isteri", value: (member.wives ?? []).filter(Boolean).length || "—" },
+                      { label: "Anak", value: (member.marriedChildren ?? 0) + (member.unmarriedChildren ?? 0) },
+                    ].map((it) => (
+                      <div key={it.label} style={{ padding: "10px 12px", background: T.bg, borderRadius: T.radiusSm, border: `1px solid ${T.border}` }}>
+                        <div style={{ fontSize: "11px", fontWeight: 700, color: T.muted, letterSpacing: "0.06em", textTransform: "uppercase" }}>{it.label}</div>
+                        <div style={{ marginTop: 4, fontSize: "14px", fontWeight: 700, color: T.text }}>{it.value}</div>
                       </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Keluarga</div>
-                      <div style={{ fontSize: "14px", fontWeight: 500, color: "#333" }}>
-                        {(member.wives ?? []).length} isteri, {(member.marriedChildren ?? 0) + (member.unmarriedChildren ?? 0)} anak
-                      </div>
-                    </div>
-                    <div>
-                      <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Penilaian keseluruhan</div>
-                      <div style={{ 
-                        fontSize: "14px", 
-                        fontWeight: 600, 
-                        color: getAssessmentColor(
-                          Math.round(((member.struggleAssessment ?? 0) + (member.familyManagementAssessment ?? 0) + (member.welfareAssessment ?? 0) + (member.fivePAssessment ?? 0) + (member.complianceAssessment ?? 0)) / 5)
-                        ) 
-                      }}>
-                        {Math.round(((member.struggleAssessment ?? 0) + (member.familyManagementAssessment ?? 0) + (member.welfareAssessment ?? 0) + (member.fivePAssessment ?? 0) + (member.complianceAssessment ?? 0)) / 5)}/5
-                      </div>
-                    </div>
+                    ))}
                   </div>
 
-                  {/* Contact Info */}
-                  <div style={{ 
-                    padding: "12px", 
-                    backgroundColor: "#f8f9fa", 
-                    borderRadius: "8px",
-                    marginBottom: "16px"
-                  }}>
-                    <div style={{ fontSize: "12px", color: "#666", marginBottom: "4px" }}>Hubungi</div>
-                    <div style={{ fontSize: "12px", color: "#333", marginBottom: "2px" }}>
-                      📱 {member.phone}
-                    </div>
-                    <div style={{ fontSize: "12px", color: "#333" }}>
-                      📍 {member.homeAddress || "—"}
-                    </div>
+                  <div style={{ marginTop: 12, display: "flex", gap: 8, flexWrap: "wrap" }}>
+                    {[
+                      { label: "Perjuangan", v: member.struggleAssessment ?? 0 },
+                      { label: "Keluarga", v: member.familyManagementAssessment ?? 0 },
+                      { label: "Kebajikan", v: member.welfareAssessment ?? 0 },
+                      { label: "5P", v: member.fivePAssessment ?? 0 },
+                      { label: "Pematuhan", v: member.complianceAssessment ?? 0 },
+                    ].map((s) => (
+                      <span
+                        key={s.label}
+                        style={{
+                          padding: "5px 10px",
+                          borderRadius: 99,
+                          fontSize: "12px",
+                          fontWeight: 700,
+                          background: scoreBg(s.v),
+                          color: scoreColor(s.v),
+                          border: `1px solid ${T.border}`,
+                        }}
+                      >
+                        {s.label}: {s.v}/5
+                      </span>
+                    ))}
                   </div>
 
-                  {/* Assessment Preview */}
-                  <div style={{ marginBottom: "16px" }}>
-                    <div style={{ fontSize: "12px", color: "#666", marginBottom: "8px", fontWeight: 500 }}>Penilaian utama</div>
-                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                      <span style={{
-                        backgroundColor: (member.struggleAssessment ?? 0) >= 4 ? "#e8f5e8" : (member.struggleAssessment ?? 0) >= 3 ? "#fff3e0" : "#ffebee",
-                        color: (member.struggleAssessment ?? 0) >= 4 ? "#4caf50" : (member.struggleAssessment ?? 0) >= 3 ? "#ff9800" : "#f44336",
-                        padding: "4px 10px",
-                        borderRadius: "16px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: "1px solid rgba(0,0,0,0.08)"
-                      }}>
-                        Perjuangan: {(member.struggleAssessment ?? 0)}/5
-                      </span>
-                      <span style={{
-                        backgroundColor: (member.familyManagementAssessment ?? 0) >= 4 ? "#e8f5e8" : (member.familyManagementAssessment ?? 0) >= 3 ? "#fff3e0" : "#ffebee",
-                        color: (member.familyManagementAssessment ?? 0) >= 4 ? "#4caf50" : (member.familyManagementAssessment ?? 0) >= 3 ? "#ff9800" : "#f44336",
-                        padding: "4px 10px",
-                        borderRadius: "16px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: "1px solid rgba(0,0,0,0.08)"
-                      }}>
-                        Keluarga: {(member.familyManagementAssessment ?? 0)}/5
-                      </span>
-                      <span style={{
-                        backgroundColor: (member.welfareAssessment ?? 0) >= 4 ? "#e8f5e8" : (member.welfareAssessment ?? 0) >= 3 ? "#fff3e0" : "#ffebee",
-                        color: (member.welfareAssessment ?? 0) >= 4 ? "#4caf50" : (member.welfareAssessment ?? 0) >= 3 ? "#ff9800" : "#f44336",
-                        padding: "4px 10px",
-                        borderRadius: "16px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: "1px solid rgba(0,0,0,0.08)"
-                      }}>
-                        Kebajikan: {(member.welfareAssessment ?? 0)}/5
-                      </span>
-                      <span style={{
-                        backgroundColor: (member.fivePAssessment ?? 0) >= 4 ? "#e8f5e8" : (member.fivePAssessment ?? 0) >= 3 ? "#fff3e0" : "#ffebee",
-                        color: (member.fivePAssessment ?? 0) >= 4 ? "#4caf50" : (member.fivePAssessment ?? 0) >= 3 ? "#ff9800" : "#f44336",
-                        padding: "4px 10px",
-                        borderRadius: "16px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: "1px solid rgba(0,0,0,0.08)"
-                      }}>
-                        5P: {(member.fivePAssessment ?? 0)}/5
-                      </span>
-                      <span style={{
-                        backgroundColor: (member.complianceAssessment ?? 0) >= 4 ? "#e8f5e8" : (member.complianceAssessment ?? 0) >= 3 ? "#fff3e0" : "#ffebee",
-                        color: (member.complianceAssessment ?? 0) >= 4 ? "#4caf50" : (member.complianceAssessment ?? 0) >= 3 ? "#ff9800" : "#f44336",
-                        padding: "4px 10px",
-                        borderRadius: "16px",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        border: "1px solid rgba(0,0,0,0.08)"
-                      }}>
-                        Pematuhan: {(member.complianceAssessment ?? 0)}/5
-                      </span>
-                      <span style={{
-                        backgroundColor: "#e3f2fd",
-                        color: "#1976d2",
-                        padding: "4px 10px",
-                        borderRadius: "16px",
-                        fontSize: "11px",
-                        fontWeight: 700,
-                        border: "1px solid rgba(25, 118, 210, 0.2)"
-                      }}>
-                        Purata: {Math.round(((member.struggleAssessment ?? 0) + (member.familyManagementAssessment ?? 0) + (member.welfareAssessment ?? 0) + (member.fivePAssessment ?? 0) + (member.complianceAssessment ?? 0)) / 5)}/5
-                      </span>
-                    </div>
+                  <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
+                    <span style={{ fontSize: "12px", color: T.muted }}>Sertai: {fmtDate(member.joinDate)}</span>
+                    <span style={{ fontSize: "12px", color: T.muted }}>Kemaskini: {fmtDate(member.lastUpdated)}</span>
                   </div>
 
-                  {/* Summary */}
-                  <div style={{ 
-                    fontSize: "12px", 
-                    color: "#666", 
-                    fontStyle: "italic",
-                    lineHeight: 1.4,
-                    marginBottom: "16px"
-                  }}>
-                    {member.summary || "—"}
-                  </div>
-
-                  {/* Dates */}
-                  <div style={{ fontSize: "12px", color: "#999", display: "flex", justifyContent: "space-between" }}>
-                    <span>Sertai: {formatDate(member.joinDate)}</span>
-                    <span>Kemaskini: {formatDate(member.lastUpdated)}</span>
-                  </div>
-
-                  {/* Hover Overlay */}
-                  <div style={{
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    backgroundColor: "rgba(25, 118, 210, 0.1)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    opacity: 0,
-                    transition: "opacity 0.3s ease"
-                  }}>
-                    <div style={{
-                      backgroundColor: "#1976d2",
-                      color: "white",
-                      padding: "12px 24px",
-                      borderRadius: "8px",
-                      fontSize: "16px",
-                      fontWeight: 600
-                    }}>
+                  <div
+                    style={{
+                      position: "absolute",
+                      inset: 0,
+                      background: "rgba(37, 99, 235, 0.08)",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      opacity: hovered ? 1 : 0,
+                      transition: "opacity .15s",
+                      pointerEvents: "none",
+                    }}
+                  >
+                    <div style={{ background: T.accent, color: "#fff", padding: "10px 18px", borderRadius: T.radiusSm, fontSize: "14px", fontWeight: 700 }}>
                       Lihat butiran
                     </div>
                   </div>
                 </div>
-              ))
-            )}
-          </div>
-
-          {/* Empty State */}
-          {filteredMembers.length === 0 && !loading && (
-            <div style={{
-              textAlign: "center",
-              padding: "48px 24px",
-              backgroundColor: "white",
-              borderRadius: "12px",
-              boxShadow: "0 2px 8px rgba(0,0,0,0.1)"
-            }}>
-              <div style={{ fontSize: "48px", marginBottom: "16px" }}>👥</div>
-              <h3 style={{ margin: "0 0 8px 0", fontSize: "20px", fontWeight: 600, color: "#333" }}>
-                Tiada ahli dijumpai
-              </h3>
-              <p style={{ margin: 0, fontSize: "14px", color: "#666", marginBottom: "24px" }}>
-                {searchTerm || filterState || filterStatus
-                  ? "Cuba laraskan penapis atau kata carian"
-                  : "Mula dengan mendaftarkan ahli pertama"}
-              </p>
-              <button
-                onClick={() => navigate('/members/add')}
-                style={{
-                  backgroundColor: "#1976d2",
-                  color: "white",
-                  border: "none",
-                  padding: "12px 24px",
-                  borderRadius: "8px",
-                  fontSize: "14px",
-                  fontWeight: 500,
-                  cursor: "pointer"
-                }}
-              >
-                Daftar ahli
-              </button>
-            </div>
+              );
+            })
           )}
         </div>
-      </div>
 
+        {!loading && filteredMembers.length === 0 ? (
+          <div style={{ marginTop: 16 }}>
+            <EmptyState
+              title="Tiada ahli dijumpai"
+              desc={searchTerm || filterState || filterStatus ? "Cuba laraskan penapis atau kata carian." : "Mula dengan mendaftarkan ahli pertama."}
+              actionLabel="Daftar ahli"
+              onAction={() => navigate("/members/add")}
+            />
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }
