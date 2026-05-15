@@ -24,7 +24,7 @@ router.post('/register', async (req, res) => {
       email,
       password: hashedPassword,
       firstName,
-      lastName
+      lastName,
     });
 
     res.status(201).json({
@@ -41,6 +41,7 @@ router.post('/register', async (req, res) => {
 // Login user
 router.post('/login', async (req, res) => {
   try {
+    console.log(req.body)
     const { email, password } = req.body;
     
     // Find user by email
@@ -62,15 +63,18 @@ router.post('/login', async (req, res) => {
       { expiresIn: process.env.JWT_EXPIRES_IN || '24h' }
     );
 
+    console.log(user)
+
     res.json({
       success: true,
-      message: 'Login successful',
+      message: 'Login successful----',
       token,
       user: {
         id: user.id,
         email: user.email,
         firstName: user.firstName,
-        lastName: user.lastName
+        lastName: user.lastName,
+        allowed_menu: user.allowed_menu
       }
     });
   } catch (error) {

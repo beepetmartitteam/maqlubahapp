@@ -65,6 +65,10 @@ const User = sequelize.define('User', {
         type: DataTypes.STRING(255),
         allowNull: true,
         field: 'oauth_id'
+    },
+    allowed_menu:{
+        type: DataTypes.STRING(255),
+        allowNull:true
     }
 }, {
     tableName: 'users',

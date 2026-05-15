@@ -57,7 +57,6 @@ const LoginPage = () => {
         password: formData.password
       });
       
-      console.log('Login successful:', data);
       navigate('/home');
     } catch (error) {
       console.error('Login error:', error.message);
