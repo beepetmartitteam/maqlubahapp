@@ -10,12 +10,15 @@ module.exports = (sequelize) => {
     userId: {
       type: DataTypes.INTEGER,
       allowNull: false,
+      field: 'user_id',
       references: {
-        model: 'Users',
+        model: 'users',
         key: 'id'
-      }
+      },
+      onDelete: 'CASCADE',
+      onUpdate: 'CASCADE'
     },
-    
+
     // BAHAGIAN A (PROFILE MEMBER)
     husbandName: {
       type: DataTypes.STRING(255),
@@ -155,7 +158,6 @@ module.exports = (sequelize) => {
       type: DataTypes.TEXT,
       allowNull: true
     },
-    
     // Status and metadata
     status: {
       type: DataTypes.ENUM('active', 'inactive', 'pending'),

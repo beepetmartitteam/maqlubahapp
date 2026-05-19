@@ -34,6 +34,11 @@ const T = {
   shadowMd:  "0 4px 12px rgba(0,0,0,.08)",
 };
 
+const MALAYSIA_STATE_OPTIONS = [
+  "PERLIS","KEDAH","P. PINANG","PERAK","SELANGOR","WP KL / PJ","WP LABUAN",
+  "NEGERI SEMBILAN","MELAKA","JOHOR","PAHANG","TERENGGANU","KELANTAN","SABAH","SARAWAK",
+];
+
 const INITIAL_MEMBERS = [
   {
     id: 1,

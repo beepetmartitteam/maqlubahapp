@@ -69,6 +69,11 @@ const User = sequelize.define('User', {
     allowed_menu:{
         type: DataTypes.STRING(255),
         allowNull:true
+    },
+    role: {
+        type: DataTypes.ENUM('admin', 'user'),
+        defaultValue: 'user',
+        allowNull: false
     }
 }, {
     tableName: 'users',
