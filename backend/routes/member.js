@@ -220,19 +220,25 @@ router.post('/', async (req, res) => {
   try {
     // Ensure userId comes from the logged-in user
     if (!req.user || !req.user.id) {
+      console.error('Authentication failed: req.user or req.user.id is missing');
       return res.status(401).json({ 
         success: false, 
         error: 'User authentication required' 
       });
     }
 
-    const memberData = { ...req.body, userId: req.user.id };
+    console.log('Creating member for user:', req.user.id);
+    console.log('Request body:', JSON.stringify(req.body));
+
+    const memberData = { ...req.body };
     
     // Remove userId from request body if it was sent (security measure)
     delete memberData.userId;
     
     // Set userId from authenticated user
     memberData.userId = req.user.id;
+    
+    console.log('Final member data:', JSON.stringify(memberData));
     
     const member = await Member.create(memberData);
     
@@ -243,6 +249,8 @@ router.post('/', async (req, res) => {
     });
   } catch (error) {
     console.error('Error creating member:', error);
+    console.error('Error details:', error.message);
+    console.error('Error stack:', error.stack);
     res.status(500).json({ success: false, error: error.message });
   }
 });
