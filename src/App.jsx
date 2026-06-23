@@ -21,6 +21,7 @@ import CompanyManagementPlanList from './pages/CompanyManagementPlanList';
 import MembersList from './pages/MembersList';
 import MemberDetail from './pages/MemberDetail';
 import MemberAddPage from './pages/MemberAddPage';
+import TodoList from './pages/TodoList';
 
 function App() {
   return (
@@ -53,6 +54,9 @@ function App() {
           <Route path="/members" element={<MembersList />} />
           <Route path="/members/add" element={<MemberAddPage />} />
           <Route path="/member-detail/:id" element={<MemberDetail />} />
+
+          {/* Todo List Route */}
+          <Route path="/todo-list" element={<TodoList />} />
 
           <Route path="*" element={<div>Route not found</div>} />
         </Routes>

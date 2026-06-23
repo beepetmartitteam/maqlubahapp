@@ -12,6 +12,7 @@ const Staff = require('./Staff');
 const Plan = require('./Plan');
 const Report = require('./Report');
 const Task = require('./Task');
+const TodoList = require('./TodoList');
 
 // Member Management model
 const Member = require('./member');
@@ -71,6 +72,7 @@ const StaffModel = Staff(sequelize);
 const PlanModel = Plan(sequelize);
 const ReportModel = Report(sequelize);
 // const TaskModel = Task(sequelize); // Temporarily disabled to isolate issue
+const TodoListModel = TodoList(sequelize);
 
 // Member Management model
 const MemberModel = Member(sequelize);
@@ -83,6 +85,7 @@ const models = {
   Plan: PlanModel,
   Report: ReportModel,
   // Task: TaskModel, // Temporarily disabled
+  TodoList: TodoListModel,
   Member: MemberModel
 };
 
@@ -91,6 +94,7 @@ StaffModel.associate(models);
 PlanModel.associate(models);
 ReportModel.associate(models);
 // TaskModel.associate(models); // Temporarily disabled
+TodoListModel.associate(models);
 
 // Set up Member model associations
 MemberModel.associate(models);
@@ -126,6 +130,7 @@ module.exports = {
     Plan: PlanModel,
     Report: ReportModel,
     // Task: TaskModel, // Temporarily disabled
+    TodoList: TodoListModel,
     // Member Management model
     Member: MemberModel,
     syncDatabase
