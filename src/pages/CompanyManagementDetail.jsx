@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { companyManagementAPI } from "../api/company-management";
+import { todoListAPI } from "../api/todo-list";
 
 // Responsive hook for detecting mobile screens
 const useResponsive = () => {
@@ -121,10 +122,18 @@ function CompanyManagementDetail() {
     status: "planning",
     deadline: ""
   });
+  const [tasks, setTasks] = useState([]);
+  const [tasksLoading, setTasksLoading] = useState(false);
 
   useEffect(() => {
     fetchCompany();
   }, [id]);
+
+  useEffect(() => {
+    if (company && activeTab === "tasks") {
+      fetchTasks();
+    }
+  }, [company, activeTab]);
 
   const fetchCompany = async () => {
     try {
@@ -227,6 +236,47 @@ function CompanyManagementDetail() {
         console.error('Error adding plan:', err);
         setError('Failed to add plan');
       }
+    }
+  };
+
+  const fetchTasks = async () => {
+    try {
+      setTasksLoading(true);
+      const token = localStorage.getItem('token');
+      const data = await todoListAPI.getTodoItems(token, { companyId: company.id });
+      
+      if (data.success) {
+        setTasks(data.data);
+      }
+    } catch (err) {
+      console.error('Error fetching tasks:', err);
+    } finally {
+      setTasksLoading(false);
+    }
+  };
+
+  const toggleTask = async (taskId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const data = await todoListAPI.toggleTodoItem(taskId, token);
+      
+      if (data.success) {
+        setTasks(tasks.map(task => 
+          task.id === taskId ? data.data : task
+        ));
+      }
+    } catch (err) {
+      console.error('Error toggling task:', err);
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    try {
+      const token = localStorage.getItem('token');
+      await todoListAPI.deleteTodoItem(taskId, token);
+      setTasks(tasks.filter(task => task.id !== taskId));
+    } catch (err) {
+      console.error('Error deleting task:', err);
     }
   };
 
@@ -467,7 +517,7 @@ function CompanyManagementDetail() {
               marginBottom: "24px",
               overflowX: "auto"
             }}>
-              {["overview", "team", "plans", "reports"].map(tab => (
+              {["overview", "team", "plans", "tasks", "reports"].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -659,6 +709,100 @@ function CompanyManagementDetail() {
                     </div>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {activeTab === "tasks" && (
+              <div>
+                <h3 style={{ margin: "0 0 16px 0", fontSize: "18px", fontWeight: 600, color: "#333" }}>
+                  Company Tasks
+                </h3>
+                {tasksLoading ? (
+                  <div style={{ textAlign: "center", padding: "32px", color: "#666" }}>
+                    Loading tasks...
+                  </div>
+                ) : tasks.length === 0 ? (
+                  <div style={{ textAlign: "center", padding: "32px", color: "#666" }}>
+                    No tasks assigned to this company
+                  </div>
+                ) : (
+                  <div style={{ display: "grid", gap: "12px" }}>
+                    {tasks.map((task) => (
+                      <div
+                        key={task.id}
+                        style={{
+                          backgroundColor: task.completed ? "#F5F5F5" : "white",
+                          borderRadius: "8px",
+                          padding: "14px",
+                          border: "1px solid #E4EDEA",
+                          display: "flex",
+                          alignItems: "flex-start",
+                          gap: "12px"
+                        }}
+                      >
+                        <button
+                          onClick={() => toggleTask(task.id)}
+                          style={{
+                            width: "24px",
+                            height: "24px",
+                            borderRadius: "50%",
+                            border: `2px solid ${task.completed ? "#0D7A5F" : "#D0D9D6"}`,
+                            backgroundColor: task.completed ? "#0D7A5F" : "white",
+                            cursor: "pointer",
+                            display: "flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            flexShrink: 0,
+                            marginTop: "2px"
+                          }}
+                        >
+                          {task.completed && (
+                            <span style={{ color: "white", fontSize: "14px", lineHeight: 1 }}>✓</span>
+                          )}
+                        </button>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{
+                            fontSize: "14px",
+                            fontWeight: 500,
+                            color: task.completed ? "#9AA8A3" : "#0A1F17",
+                            lineHeight: "1.4",
+                            textDecoration: task.completed ? "line-through" : "none",
+                            marginBottom: task.assignee ? "6px" : "0"
+                          }}>
+                            {task.text}
+                          </div>
+                          {task.assignee && (
+                            <div style={{
+                              display: "inline-block",
+                              backgroundColor: "#EBF7F3",
+                              color: "#0D7A5F",
+                              fontSize: "11px",
+                              fontWeight: 600,
+                              padding: "3px 8px",
+                              borderRadius: "4px"
+                            }}>
+                              {task.assignee}
+                            </div>
+                          )}
+                        </div>
+                        <button
+                          onClick={() => deleteTask(task.id)}
+                          style={{
+                            background: "none",
+                            border: "none",
+                            color: "#E57373",
+                            fontSize: "18px",
+                            cursor: "pointer",
+                            padding: "4px",
+                            flexShrink: 0
+                          }}
+                        >
+                          ×
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
             )}
 
