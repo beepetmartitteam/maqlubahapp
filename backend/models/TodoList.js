@@ -40,11 +40,7 @@ module.exports = (sequelize) => {
     companyId: {
       type: DataTypes.INTEGER,
       allowNull: true,
-      field: 'company_id',
-      references: {
-        model: 'companies',
-        key: 'id'
-      }
+      field: 'company_id'
     },
     userId: {
       type: DataTypes.INTEGER,
