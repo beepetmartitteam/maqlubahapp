@@ -10,7 +10,7 @@ router.use(authenticateToken);
 // Get all todo items
 router.get('/', async (req, res) => {
   try {
-    const { companyId, completed, assignee, search } = req.query;
+    const { companyId, completed, assignee, search, category } = req.query;
     
     const whereClause = {};
     
@@ -30,6 +30,10 @@ router.get('/', async (req, res) => {
       whereClause.text = {
         [require('sequelize').Op.like]: `%${search}%`
       };
+    }
+    
+    if (category) {
+      whereClause.category = category;
     }
     
     const todoItems = await TodoList.findAll({
@@ -261,13 +265,26 @@ router.get('/stats/overview', async (req, res) => {
       raw: true
     });
 
+    // Get category statistics
+    const categoryStats = await TodoList.findAll({
+      where: whereClause,
+      attributes: [
+        'category',
+        [require('sequelize').fn('COUNT', require('sequelize').col('id')), 'count'],
+        [require('sequelize').fn('SUM', require('sequelize').literal('CASE WHEN completed = true THEN 1 ELSE 0 END')), 'completed_count']
+      ],
+      group: ['category'],
+      raw: true
+    });
+
     res.json({ 
       success: true, 
       data: {
         total,
         completed,
         pending,
-        assigneeStats
+        assigneeStats,
+        categoryStats
       }
     });
   } catch (error) {

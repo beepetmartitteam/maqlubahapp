@@ -23,6 +23,16 @@ module.exports = (sequelize) => {
       type: DataTypes.STRING,
       allowNull: true
     },
+    category: {
+      type: DataTypes.ENUM(
+        'urgent_important',
+        'important_not_urgent',
+        'urgent_not_important',
+        'not_urgent_not_important'
+      ),
+      allowNull: false,
+      defaultValue: 'important_not_urgent'
+    },
     priority: {
       type: DataTypes.ENUM('low', 'medium', 'high'),
       allowNull: false,
