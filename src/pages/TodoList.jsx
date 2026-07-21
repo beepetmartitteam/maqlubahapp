@@ -179,8 +179,9 @@ function TodoList() {
       (filter === "completed" && task.completed) ||
       (filter === "pending" && !task.completed);
     
-    const matchesSearch = task.text.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      task.assignee.toLowerCase().includes(searchTerm.toLowerCase());
+   const matchesSearch =
+  (task.text || "").toLowerCase().includes((searchTerm || "").toLowerCase()) ||
+  (task.assignee || "").toLowerCase().includes((searchTerm || "").toLowerCase());
     
     const matchesCompany = 
       !filterCompanyId ||
