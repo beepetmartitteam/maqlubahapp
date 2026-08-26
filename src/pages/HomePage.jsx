@@ -72,6 +72,16 @@ function HomePage() {
       bg: "#FEF3E7",
       tag: "Tugas",
       route: "/todo-list"
+    },
+    {
+      id: "projects",
+      title: "Projek",
+      description: "Urus dan pantau semua projek",
+      icon: "📁",
+      accent: "#8B5CF6",
+      bg: "#F5F3FF",
+      tag: "Projek",
+      route: "/projects"
     }
   ];
 

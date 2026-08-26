@@ -1,5 +1,5 @@
 // Simple Cloudinary upload implementation
-export const uploadToCloudinary = async (file) => {
+export const uploadToCloudinary = async (file, folder = 'customer', uploadPreset = 'customer') => {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
     reader.readAsDataURL(file);
@@ -9,8 +9,8 @@ export const uploadToCloudinary = async (file) => {
         // Use fetch to upload to Cloudinary directly
         const formData = new FormData();
         formData.append('file', file);
-        formData.append('upload_preset', 'customer');
-        formData.append('folder', 'customer');
+        formData.append('upload_preset', uploadPreset);
+        formData.append('folder', folder);
         
         const response = await fetch(
           `https://api.cloudinary.com/v1_1/dzbfpxsob/image/upload`,
@@ -38,8 +38,8 @@ export const uploadToCloudinary = async (file) => {
 };
 
 // Upload multiple images
-export const uploadMultipleToCloudinary = async (files) => {
-  const uploadPromises = files.map(file => uploadToCloudinary(file));
+export const uploadMultipleToCloudinary = async (files, folder = 'customer', uploadPreset = 'customer') => {
+  const uploadPromises = files.map(file => uploadToCloudinary(file, folder, uploadPreset));
   try {
     const results = await Promise.all(uploadPromises);
     return results;

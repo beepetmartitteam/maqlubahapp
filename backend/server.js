@@ -20,6 +20,7 @@ const ahliRoutes = require('./routes/ahli');
 const companyManagementRoutes = require('./routes/company-management');
 const memberRoutes = require('./routes/member');
 const todoListRoutes = require('./routes/todo-list');
+const projectRoutes = require('./routes/project');
 
 const app = express();
 
@@ -41,9 +42,11 @@ app.use(cors({
       'http://localhost:3000', 
       'http://localhost:5173',
       'http://localhost:5550',
+      'http://localhost:5555',
       'http://127.0.0.1:3000',
       'http://127.0.0.1:5173',
-      'http://127.0.0.1:5550'
+      'http://127.0.0.1:5550',
+      'http://127.0.0.1:5555'
     ];
     
     if (allowedOrigins.indexOf(origin) !== -1) {
@@ -136,6 +139,9 @@ const upload = multer({
   }
 });
 
+// Make upload middleware available globally
+app.locals.upload = upload;
+
 // Create uploads directory if it doesn't exist
 if (!fs.existsSync('uploads')) {
   fs.mkdirSync('uploads');
@@ -183,6 +189,7 @@ app.use('/api/ahli', ahliRoutes);
 app.use('/api/company-management', companyManagementRoutes);
 app.use('/api/members', memberRoutes);
 app.use('/api/todo-list', todoListRoutes);
+app.use('/api/projects', projectRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
