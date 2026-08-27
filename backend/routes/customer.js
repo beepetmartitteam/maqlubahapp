@@ -83,7 +83,7 @@ router.get('/:id', async (req, res) => {
 // Create new customer
 router.post('/', async (req, res) => {
   try {
-    const customerData = { ...req.body, userId: req.user.id };
+    const customerData = { ...req.body, userId: req.user ? req.user.id : null };
     
     const customer = await Customer.create(customerData);
     

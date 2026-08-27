@@ -98,7 +98,7 @@ router.post('/', async (req, res) => {
       dueDate: dueDate || null,
       category: category || null,
       companyId: companyId || null,
-      userId: req.user.id,
+      userId: req.user ? req.user.id : null,
       completed: false
     };
     

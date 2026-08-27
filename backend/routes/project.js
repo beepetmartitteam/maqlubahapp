@@ -105,7 +105,8 @@ router.post('/', async (req, res) => {
       orders 
     } = req.body;
     
-    const userId = req.user.id;
+    // Get userId if authentication is enabled, otherwise use null
+    const userId = req.user ? req.user.id : null;
     
     const projectData = {
       id,
