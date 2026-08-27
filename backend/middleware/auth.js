@@ -11,6 +11,10 @@ const authenticateToken = async (req, res, next) => {
       return res.status(401).json({ success: false, message: 'Access token required' });
     }
 
+    // Log token info for debugging (remove in production)
+    console.log('Token length:', token.length);
+    console.log('Token starts with:', token.substring(0, 20) + '...');
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET || 'your-secret-key');
     
     // Get user from database
@@ -22,7 +26,13 @@ const authenticateToken = async (req, res, next) => {
     req.user = user;
     next();
   } catch (error) {
-    console.error('Auth middleware error:', error);
+    console.error('Auth middleware error:', error.name, error.message);
+    if (error.name === 'TokenExpiredError') {
+      return res.status(401).json({ success: false, message: 'Token expired' });
+    }
+    if (error.name === 'JsonWebTokenError') {
+      return res.status(401).json({ success: false, message: 'Invalid token format' });
+    }
     return res.status(403).json({ success: false, message: 'Invalid or expired token' });
   }
 };

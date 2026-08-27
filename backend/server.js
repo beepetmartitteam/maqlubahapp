@@ -39,6 +39,12 @@ app.use(cors({
     const allowedOrigins = [
       'https://gemilang.beeasy.id', // Production
       'https://gemilang-api.beeasy.id',
+      'https://www.gemilang.beeasy.id',
+      'https://www.gemilang-api.beeasy.id',
+      'https://beeasy.id',
+      'http://beeasy.id',
+      'https://www.beeasy.id',
+      'http://www.beeasy.id',
       'http://localhost:3000', 
       'http://localhost:5173',
       'http://localhost:5550',
