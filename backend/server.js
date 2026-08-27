@@ -45,10 +45,11 @@ const allowedOrigins = [
   'https://gemilang.beeasy.id',
   'https://www.gemilang.beeasy.id',
 
-  // API domain - hanya diperlukan jika API juga diakses
-  // sebagai origin dari browser
   'https://gemilang-api.beeasy.id',
   'https://www.gemilang-api.beeasy.id',
+
+  // MAP
+  'https://map.beeasy.id',
 
   // Main website
   'https://beeasy.id',
@@ -61,7 +62,6 @@ const allowedOrigins = [
   'http://localhost:5555',
   'http://localhost:5557',
 
-  // 127.0.0.1
   'http://127.0.0.1:3000',
   'http://127.0.0.1:5173',
   'http://127.0.0.1:5550',
